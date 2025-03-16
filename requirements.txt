@@ -2,3 +2,5 @@ nicegui==2.12.1
 pyodbc==5.2.0
 python-dotenv==1.0.1
 mysql~=0.0.3
+sqlalchemy~=2.0.39
+mysql-connector-python~=9.2.0

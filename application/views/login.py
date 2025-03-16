@@ -36,10 +36,8 @@ def add_register_link():
 
 
 def login_page():
-    with ui.column().classes("h-screen flex items-center justify-center bg-gray-100"):
+    with ui.row().classes("h-screen w-screen flex items-center justify-center bg-gray-100"):
         with ui.card().classes("w-96 p-8 shadow-lg rounded-lg bg-white"):
             email, password = create_login_form()
             add_login_button(email, password)
             add_register_link()
-
-
