@@ -1,13 +1,14 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from application.database import init_db
+import application.views.login
+import application.views.register
+import application.views.home
+from nicegui import ui
 
-from application.database import DATABASE_URL
-from application.main import start_app
+
+def start_app():
+    ui.run(title="Investment Advisor", port=8080)
+
 
 if __name__ in {"__main__", "__mp_main__"}:
-    Base = declarative_base()
-    engine = create_engine(DATABASE_URL)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-    Base.metadata.create_all(bind=engine)
+    init_db()
     start_app()
