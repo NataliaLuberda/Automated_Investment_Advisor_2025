@@ -1,6 +1,8 @@
 import os
 
-import mysql.connector as mysql
+import mysql
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,6 +13,14 @@ DB_HOST = os.getenv("DB_HOST", "mysql")
 DB_NAME = os.getenv("DB_NAME", "mydatabase")
 
 DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+
+Base = declarative_base()
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
 
 
 def get_db_connection():
