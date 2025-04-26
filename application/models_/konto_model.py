@@ -1,5 +1,5 @@
 import uuid
-from utility.waluty import Waluta
+from ..utility.waluty import Waluta
 
 class KontoUzytkownika:
     def __init__(self, imie: str, nazwisko: str, stan_konta: float) -> 'KontoUzytkownika':
@@ -7,7 +7,7 @@ class KontoUzytkownika:
         self._imie = imie
         self._nazwisko = nazwisko
         self._stan_konta = stan_konta
-        self._rachunki_bankowe: list[RachunekBankowy]
+        self._rachunki_bankowe: list[RachunekBankowy] = list()
 
     def daj_id(self) -> uuid.UUID:
         return self._id
@@ -18,6 +18,9 @@ class KontoUzytkownika:
     def dodaj_rachunek_bankowy(self, waluta: Waluta, kwota: float = 0, ) -> None:
         self._rachunki_bankowe.append(RachunekBankowy(kwota=kwota, rodzaj_waluty=waluta))
 
+    def daj_rachunki_uzytkownika(self) -> list['RachunekBankowy']:
+        return self._rachunki_bankowe
+
 class RachunekBankowy:
     def __init__(self, kwota: float, rodzaj_waluty: Waluta):
         self._id = uuid.uuid4()
@@ -26,3 +29,4 @@ class RachunekBankowy:
 
     def get_kwota(self) -> float:
         return self._kwota
+

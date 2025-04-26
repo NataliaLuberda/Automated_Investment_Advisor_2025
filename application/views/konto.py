@@ -24,7 +24,10 @@ def konto_page():
                 with ui.tab_panel(historia):
                     ui.label("Twoja historia wydatków")
                 with ui.tab_panel(rachunki):
-                    ui.label("Twoje rachunki bankowe")
+                    for rachunek in uzytkownik.daj_rachunki_uzytkownika():
+                        with ui.row():
+                            ui.label(f"Stan konta: {rachunek.get_kwota()} {rachunek._waluta.name}")
+                            ui.separator()
                     
 
 
