@@ -1,5 +1,6 @@
 import uuid
 from ..utility.waluty import Waluta
+from datetime import datetime
 
 class KontoUzytkownika:
     def __init__(self, imie: str, nazwisko: str, stan_konta: float) -> 'KontoUzytkownika':
@@ -30,3 +31,8 @@ class RachunekBankowy:
     def get_kwota(self) -> float:
         return self._kwota
 
+class Transakcja:
+    def __init__(self, od: uuid.UUID, do: uuid.UUID, timestamp: datetime):
+        self._id_rachunku_zrodlowego: uuid.UUID = od
+        self._id_rachunku_adresata: uuid.UUID = do
+        self._timestamp: datetime = timestamp
