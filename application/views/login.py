@@ -32,8 +32,6 @@ def add_register_link():
         ui.label("Nie masz konta?").classes("text-gray-600")
         ui.link("Zarejestruj się", "/register").classes("text-blue-500 hover:text-blue-600 transition duration-200")
 
-
-@ui.page('/')
 @ui.page('/login')
 def login_page():
     with ui.row().classes("h-screen w-screen flex items-center justify-center bg-gray-100"):
