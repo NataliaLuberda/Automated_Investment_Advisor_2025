@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Waluty(Enum):
+class Waluta(Enum):
     USD = 1
     EUR = 2
     GBP = 3
