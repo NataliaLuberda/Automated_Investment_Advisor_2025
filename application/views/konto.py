@@ -1,6 +1,7 @@
 from nicegui import ui
 from ..models_.konto_model import KontoUzytkownika, Transakcja, TransakcjaBuilder
 from ..utility.waluty import Waluta
+import uuid
 
 @ui.page('/')
 def konto_page():
@@ -12,14 +13,13 @@ def konto_page():
 
     with ui.element('div').classes('w-screen h-screen flex items-center justify-center'):
 
-        with ui.card().classes('w-96 min-h-0 max-h-full flex flex-col items-center justify-center'):
+        with ui.card().classes('w-96 min-h-0 max-h-full flex flex-col items-left justify-left'):
 
             with ui.card_section().classes("w-full"):
-                ui.label(uzytkownik.daj_imie_nazwisko()).classes("text-4xl")
-                ui.separator()
+                ui.label(uzytkownik.daj_imie_nazwisko()).classes("text-4xl w-full text-center")
 
-                with ui.row() as pole_na_nowy_przelew:
-                    ui.button("Nowy przelew", on_click=lambda: nowy_przelew_pole(pole_na_nowy_przelew))
+            with ui.card_section().classes("w-full h-full"):
+                pole_przelewu()
 
             with ui.card_section():
                 with ui.tabs() as tabs:
@@ -48,25 +48,63 @@ def _reset_styling() -> None:
         </style>
         ''')
     
+def pole_przelewu() -> None:
+
+    with ui.row().classes("flex justify-center items-center"):
+        nowy_przelew_button = ui.button(
+            "Nowy przelew", 
+            icon="new", 
+            on_click=lambda : setattr(nowy_przelew_button, 'visible', False))
+
+        with ui.column().bind_visibility_from(nowy_przelew_button, 'visible', lambda x: not x) as formularz:
+            ui.number(label="Kwota przelewu", value=0, min=0.01, max=999999999.99, step=1.0).classes('w-full')
+
+            with ui.row().classes('flex align-center items-center border'):
+                ui.label("Adresat:")
+                PLACEHOLDER_FOR_NOW = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"}
+                czy_wziac_adresata_z_listy_kontaktow_switch = ui.switch("Z kontaktów")
+
+            ui.select(PLACEHOLDER_FOR_NOW, value=1).bind_visibility_from(
+                czy_wziac_adresata_z_listy_kontaktow_switch, 
+                'value').classes('w-full')
+
+            ui.input(label="Numer rachunku").bind_visibility_from(
+                czy_wziac_adresata_z_listy_kontaktow_switch, 
+                'value', lambda x: not x).classes('w-full')
+            
+            ui.textarea(label="Opis przelewu").classes('w-full')
+            przycisk_wyslij = ui.button("Wyślij", icon="send", on_click=lambda: setattr(nowy_przelew_button, 'visible', True))
+    
+    
 def nowy_przelew_pole(sekcja) -> None:
 
     transakcja_szablon = TransakcjaBuilder()
-
     sekcja.clear()
     with ui.column():
-        ui.number(label="Kwota", value=0, min=0.01, max=999999999.99, step=1.0)
+        ui.number(label="Kwota przelewu", value=0, min=0.01, max=999999999.99, step=1.0).classes('w-full')
 
-        with ui.row().classes('flex align-center items-center'):
+        with ui.row().classes('flex align-center items-center border'):
             ui.label("Adresat:")
             PLACEHOLDER_FOR_NOW = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"}
             czy_wziac_adresata_z_listy_kontaktow_switch = ui.switch("Z kontaktów")
 
-            adresaci_kontakty_dropdown = ui.select(PLACEHOLDER_FOR_NOW, value=1).bind_visibility_from(czy_wziac_adresata_z_listy_kontaktow_switch, 'value')
-            adresaci_numer_konta = ui.input(label="Numer rachunku").bind_visibility_from(czy_wziac_adresata_z_listy_kontaktow_switch, 
-                                                                                        'value', lambda x: not x)
-        ui.button("Wyślij", on_click=nowe_zlecenie_przelewu_wyslij())
+        ui.select(PLACEHOLDER_FOR_NOW, value=1)\
+        .bind_visibility_from(czy_wziac_adresata_z_listy_kontaktow_switch, 'value')\
+        .classes('w-full')
+
+        ui.input(label="Numer rachunku").bind_visibility_from(
+            czy_wziac_adresata_z_listy_kontaktow_switch, 
+            'value', lambda x: not x).classes('w-full')
+        
+        ui.textarea(label="Opis przelewu").classes('w-full')
+        ui.button("Wyślij", icon="send", on_click=nowe_zlecenie_przelewu_wyslij)
+        
 
 def nowe_zlecenie_przelewu_wyslij(transakcja: Transakcja) -> None:
     # Powinna tu wlecieć transakcja z poprawnymi parametrami
+    # TODO
+    pass
+
+def pobierz_id_rachunku_po_numerze(numer_rachunku: str) -> uuid.UUID:
     # TODO
     pass
