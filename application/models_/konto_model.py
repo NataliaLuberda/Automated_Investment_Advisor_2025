@@ -50,29 +50,6 @@ class RachunekBankowy:
     def id(self) -> uuid.UUID:
         return self._id
 
-# class Transakcja:
-#     def __init__(self, od: uuid.UUID, do: uuid.UUID, timestamp: datetime, kwota: float):
-#         self._id_rachunku_zrodlowego: uuid.UUID = od
-#         self._id_rachunku_adresata: uuid.UUID = do
-#         self._timestamp: datetime = timestamp
-#         self._kwota: float = kwota
-    
-#     @property
-#     def id_rachunku_zrodlowego(self) -> uuid.UUID:
-#         return self._id_rachunku_zrodlowego
-    
-#     @property
-#     def id_rachunku_adresata(self) -> uuid.UUID:
-#         return self._id_rachunku_adresata
-    
-#     @property
-#     def timestamp(self) -> datetime:
-#         return self._timestamp
-    
-#     @property
-#     def kwota(self) -> float:
-#         return self._kwota
-
 @dataclass(frozen=True)
 class Transakcja:
     id_rachunku_zrodlowego: uuid.UUID
