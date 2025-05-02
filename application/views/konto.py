@@ -1,5 +1,7 @@
 from nicegui import ui
 from ..models_.konto_model import KontoUzytkownika, Transakcja, TransakcjaBuilder
+from ..services.konto_service import KontoUzytkownikaService
+from ..services.przelew_service import PrzelewService
 from ..utility.waluty import Waluta
 import uuid
 

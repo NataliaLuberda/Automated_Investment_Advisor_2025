@@ -1,20 +1,31 @@
+from __future__ import annotations
 from ..models_.konto_model import KontoUzytkownika
 import uuid
+from dataclasses import dataclass
+from application.services.service_base import ServiceBase
 
-class KontoUzytkownikaService:
-    def __init__(self):
+class KontoUzytkownikaService(ServiceBase):
+
+    @dataclass
+    class Request:
+        id_konta: uuid.UUID
+
+    @dataclass
+    class Response:
+        konto_uzytkownika: KontoUzytkownika
+        status: bool
+
+    def daj_konto(self, request: KontoUzytkownikaService.Request) -> KontoUzytkownikaService.Response:
+        self.validate_request(request=request)
+        #TODO
         pass
 
-    class Request:
-        def __init__(self, konto_uzytkownika_id: KontoUzytkownika):
-            self._id: uuid.UUID = konto_uzytkownika_id
 
-    class Response:
-        def __init__(self):
-            self._konto_uzytkownika: KontoUzytkownika
-            self._czy_ok: bool
+    def czy_istnieje(self, request: KontoUzytkownikaService.Request) -> bool:
+        self.validate_request(request=request)
+        #TODO
+        pass
 
-    def _handle():
         #TODO
         #1. Polaczenie z baza
         #2. Query na konto po id
