@@ -1,9 +1,12 @@
 from nicegui import ui
-from ..models_.konto_model import KontoUzytkownika, Transakcja, TransakcjaBuilder
+from ..models_.konto_uzytkownika_model import KontoUzytkownika
+from ..models_.transakcja_model import Transakcja, TransakcjaBuilder
+from ..models_.rachunek_bankowy_model import RachunekBankowy
 from ..services.konto_service import KontoUzytkownikaService
 from ..services.przelew_service import PrzelewService
 from ..utility.waluty import Waluta
 import uuid
+from time import sleep
 
 @ui.page('/')
 def konto_page():
@@ -52,30 +55,59 @@ def _reset_styling() -> None:
     
 def pole_przelewu() -> None:
 
-    szablon_transakcji = TransakcjaBuilder()
+    PLACEHOLDER_FOR_NOW = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"}
+        
+    transakcja_builder = TransakcjaBuilder()
 
     with ui.row().classes("flex justify-center items-center"):
         nowy_przelew_button = ui.button("Nowy przelew", 
             icon="add", 
             on_click=lambda: setattr(nowy_przelew_button, 'visible', False))
 
-        with ui.column().bind_visibility_from(nowy_przelew_button, 'visible', lambda x: not x).classes("w-full") as formularz:
-            ui.number(label="Kwota przelewu", value=0, min=0.01, max=999999999.99, step=1.0)\
+    with ui.column().bind_visibility_from(nowy_przelew_button, 'visible', lambda x: not x)\
+            .classes("w-full border-4") as formularz:
+                
+        ui.select(PLACEHOLDER_FOR_NOW, label='Z rachunku:', value=1).classes('w-full')
+                
+        ui.number(label="Kwota przelewu", value=0, min=0.01, max=999999999.99, step=1.0)\
+        .classes('flex w-full justify-center items-center')\
+        .bind_value(transakcja_builder, 'kwota')
+
+        with ui.row().classes('flex items-center justify-center align-content'):
+            czy_wziac_adresata_z_listy_kontaktow_switch = ui.switch("Adresat z kontaktów")
+
+        ui.select(PLACEHOLDER_FOR_NOW, label='Adresat',value=1).bind_visibility_from(
+            czy_wziac_adresata_z_listy_kontaktow_switch, 
+            'value').classes('w-full')
+
+        ui.input(label="Numer rachunku", 
+                 validation={
+                     'Zbyt długi numer rachunku.': lambda x: len(x) <= 16,
+                     'Numer rachunku może zawierać tylko cyfry.': lambda x: x.isdecimal()
+                     }).bind_visibility_from(
+            czy_wziac_adresata_z_listy_kontaktow_switch, 
+            'value', lambda x: not x).classes('w-full')
+    
+        ui.textarea(label="Opis przelewu", validation={"Zbyt długi opis":lambda x: len(x) <= TransakcjaBuilder.DLUGOSC_OPISU_LIMIT})\
             .classes('w-full')\
-            .bind_value(szablon_transakcji, '_kwota')
-
-            with ui.row().classes('flex items-center justify-center'):
-                ui.label("Adresat:")
-                PLACEHOLDER_FOR_NOW = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"}
-                czy_wziac_adresata_z_listy_kontaktow_switch = ui.switch("Z kontaktów")
-
-                ui.select(PLACEHOLDER_FOR_NOW, value=1).bind_visibility_from(
-                    czy_wziac_adresata_z_listy_kontaktow_switch, 
-                    'value').classes('w-full')
-
-                ui.input(label="Numer rachunku").bind_visibility_from(
-                    czy_wziac_adresata_z_listy_kontaktow_switch, 
-                    'value', lambda x: not x).classes('w-full')
+            .bind_value(transakcja_builder, 'opis')\
+            .props(f"maxlength={TransakcjaBuilder.DLUGOSC_OPISU_LIMIT}")
+        
             
-                ui.textarea(label="Opis przelewu").classes('w-full')
-                przycisk_wyslij = ui.button("Wyślij", icon="send", on_click=lambda: setattr(nowy_przelew_button, 'visible', True))
+        ui.button("Wyślij", 
+                    icon="send", 
+                    on_click=lambda: (sleep(1),_wyslij_przelew_onclick(
+                        nowy_przelew_button, 
+                        transakcja_builder.with_time_now().build()
+                        )))
+            
+async def _wyslij_przelew_onclick(element_to_toggle_visible , transakcja: Transakcja) -> bool:
+    przelew_service = PrzelewService()
+    przelew_response = await przelew_service.handle(przelew_service.Request(transakcja=transakcja))
+    if przelew_response.status_ok:
+        ui.notify(f"Wysłano przelew! 🚀 {transakcja}", type="positive")
+        setattr(element_to_toggle_visible, 'visible', True)
+        return True
+    else:
+        ui.notify(transakcja, type="negative")
+        return False

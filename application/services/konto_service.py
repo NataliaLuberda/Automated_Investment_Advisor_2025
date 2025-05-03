@@ -1,10 +1,11 @@
 from __future__ import annotations
-from ..models_.konto_model import KontoUzytkownika
+from ..models_.konto_uzytkownika_model import KontoUzytkownika
 import uuid
 from dataclasses import dataclass
-from application.services.service_base import ServiceBase
+from ..services.base_service import BaseService
+from ..models_.rachunek_bankowy_model import RachunekBankowy
 
-class KontoUzytkownikaService(ServiceBase):
+class KontoUzytkownikaService(BaseService):
 
     @dataclass
     class Request:
@@ -18,16 +19,4 @@ class KontoUzytkownikaService(ServiceBase):
     def daj_konto(self, request: KontoUzytkownikaService.Request) -> KontoUzytkownikaService.Response:
         self.validate_request(request=request)
         #TODO
-        pass
-
-
-    def czy_istnieje(self, request: KontoUzytkownikaService.Request) -> bool:
-        self.validate_request(request=request)
-        #TODO
-        pass
-
-        #TODO
-        #1. Polaczenie z baza
-        #2. Query na konto po id
-        #3. Zwroc konto albo nulla???
-        pass
+        return KontoUzytkownikaService.Response(KontoUzytkownika('a', 'b'), True)
