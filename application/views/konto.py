@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import ui # type: ignore
 from ..models_.konto_uzytkownika_model import KontoUzytkownika
 from ..models_.transakcja_model import Transakcja, TransakcjaBuilder
 from ..models_.rachunek_bankowy_model import RachunekBankowy
@@ -55,7 +55,7 @@ def _reset_styling() -> None:
     
 def pole_przelewu() -> None:
 
-    PLACEHOLDER_FOR_NOW = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"}
+    PLACEHOLDER_FOR_NOW: dict[uuid, str] = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"} # type: ignore
         
     transakcja_builder = TransakcjaBuilder()
 
@@ -67,7 +67,7 @@ def pole_przelewu() -> None:
     with ui.column().bind_visibility_from(nowy_przelew_button, 'visible', lambda x: not x)\
             .classes("w-full border-4") as formularz:
                 
-        ui.select(PLACEHOLDER_FOR_NOW, label='Z rachunku:', value=1).classes('w-full')
+        ui.select(PLACEHOLDER_FOR_NOW, label='Z rachunku:', value=1).classes('w-full').bind_value(transakcja_builder, 'od')
                 
         ui.number(label="Kwota przelewu", value=0, min=0.01, max=999999999.99, step=1.0)\
         .classes('flex w-full justify-center items-center')\
@@ -76,17 +76,21 @@ def pole_przelewu() -> None:
         with ui.row().classes('flex items-center justify-center align-content'):
             czy_wziac_adresata_z_listy_kontaktow_switch = ui.switch("Adresat z kontaktów")
 
-        ui.select(PLACEHOLDER_FOR_NOW, label='Adresat',value=1).bind_visibility_from(
+        adresat_selektor = ui.select(PLACEHOLDER_FOR_NOW, label='Adresat',value=1).bind_visibility_from(
             czy_wziac_adresata_z_listy_kontaktow_switch, 
-            'value').classes('w-full')
+            'value').classes('w-full').bind_value(transakcja_builder, 'do')
 
-        ui.input(label="Numer rachunku", 
-                 validation={
-                     'Zbyt długi numer rachunku.': lambda x: len(x) <= 16,
-                     'Numer rachunku może zawierać tylko cyfry.': lambda x: x.isdecimal()
-                     }).bind_visibility_from(
-            czy_wziac_adresata_z_listy_kontaktow_switch, 
-            'value', lambda x: not x).classes('w-full')
+        # ui.input(label="Numer rachunku", 
+        #          validation={
+        #              'Zbyt długi numer rachunku.': lambda x: x is None or len(x) <= 16,
+        #              'Numer rachunku może zawierać tylko cyfry.': lambda x: x is None or x.isdecimal()
+        #              }).bind_visibility_from(
+        #     czy_wziac_adresata_z_listy_kontaktow_switch, 
+        #     'value', lambda x: not x).classes('w-full').props('type=number').bind_value(transakcja_builder, 'do')
+        ui.number(label="Numer rachunku")\
+        .bind_value(transakcja_builder, 'do')\
+        .bind_visibility_from(czy_wziac_adresata_z_listy_kontaktow_switch, 'value', lambda x: not x)\
+        .classes('w-full')
     
         ui.textarea(label="Opis przelewu", validation={"Zbyt długi opis":lambda x: len(x) <= TransakcjaBuilder.DLUGOSC_OPISU_LIMIT})\
             .classes('w-full')\
@@ -96,10 +100,10 @@ def pole_przelewu() -> None:
             
         ui.button("Wyślij", 
                     icon="send", 
-                    on_click=lambda: (sleep(1),_wyslij_przelew_onclick(
+                    on_click=lambda: _wyslij_przelew_onclick(
                         nowy_przelew_button, 
                         transakcja_builder.with_time_now().build()
-                        )))
+                        ))
             
 async def _wyslij_przelew_onclick(element_to_toggle_visible , transakcja: Transakcja) -> bool:
     przelew_service = PrzelewService()

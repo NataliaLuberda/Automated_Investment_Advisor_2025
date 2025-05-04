@@ -13,10 +13,23 @@ class Transakcja:
     opis: str
 
 class TransakcjaBuilder:
+    """Builder dla klasy Transakcja
+    #### Pola:
+        - od [nadawca]: uuid.UUID
+        - do (adresat): uuid.UUID
+        - kwota (> 0): float
+        - timestamp: datetime
+        - opis: str
+    #### Metody:
+    - def build(): zwraca instancję klasy Transakcja
+    - def with_time_now(): ustawia datetime na datetime.now()
+    - def with_datetime(datetime): ustawia self.datetime na datetime
+    - def czy_poprawne_parametry()
+    """
     
     DLUGOSC_OPISU_LIMIT: int = 256
-    
     def __init__(self):
+
         self._od: Optional[uuid.UUID] = None
         self._do: Optional[uuid.UUID] = None
         self._kwota: Optional[float] = None
@@ -85,10 +98,10 @@ class TransakcjaBuilder:
         #         opis=self._opis
         #     )
         return Transakcja(
-                id_rachunku_zrodlowego=self._od,
-                id_rachunku_adresata=self._do,
-                kwota=self._kwota,
-                timestamp=self._timestamp,
+                id_rachunku_zrodlowego=self._od, # type: ignore
+                id_rachunku_adresata=self._do, # type: ignore
+                kwota=self._kwota, # type: ignore
+                timestamp=self._timestamp, # type: ignore
                 opis=self._opis
             )
     
