@@ -4,6 +4,8 @@ from nicegui import ui
 from application.account import create_account
 from application.account import get_user_accounts, delete_account
 from application.decorator.login_decorator import requires_login
+from application.session import get_logged_user_email
+from application.utils.catched_total_balance import get_cached_total_balance_for_user, reset_user_balance
 
 ui.add_head_html('<link rel="stylesheet" href="/static/style.css">')
 
@@ -24,6 +26,7 @@ def handle_delete_account(account):
     try:
         result = delete_account(account.id)
         ui.notify(result)
+        reset_user_balance(get_logged_user_email())
         ui.navigate.reload()
     except Exception as e:
         ui.notify(f"{e}", type="negative")
@@ -56,6 +59,7 @@ def add_account_dialog():
                     result = create_account(selected_code, balance)
                     ui.notify(result)
                     dialog.close()
+                    reset_user_balance(get_logged_user_email())
                     ui.navigate.reload()
 
                 except Exception as e:
@@ -105,7 +109,7 @@ def account_page():
     accounts = get_user_accounts()
     default_account = next((acc for acc in accounts if acc.currency == "PLN"), None)
     foreign_accounts = [acc for acc in accounts if acc.currency != "PLN"]
-    total_balance = sum(acc.balance for acc in accounts)
+    total_balance = get_cached_total_balance_for_user(get_logged_user_email(), accounts)
 
     add_dialog = add_account_dialog()
 
