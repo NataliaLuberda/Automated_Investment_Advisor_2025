@@ -3,14 +3,15 @@ from dataclasses import dataclass
 import uuid
 from datetime import datetime
 from typing import Optional
+from application.utils.waluty import Waluta
 
 @dataclass(frozen=True)
 class Transakcja:
-    id_rachunku_zrodlowego: uuid.UUID
-    id_rachunku_adresata: uuid.UUID
-    timestamp: datetime
+    id_rachunku_zrodlowego: int
+    id_rachunku_adresata: int
     kwota: float
     opis: str
+    waluta: 'Waluta'
 
 class TransakcjaBuilder:
     """Builder dla klasy Transakcja
@@ -27,14 +28,14 @@ class TransakcjaBuilder:
     - def czy_poprawne_parametry()
     """
     
-    DLUGOSC_OPISU_LIMIT: int = 256
+    DLUGOSC_OPISU_LIMIT: int = 128
     def __init__(self):
 
         self._od: Optional[uuid.UUID] = None
         self._do: Optional[uuid.UUID] = None
         self._kwota: Optional[float] = None
-        self._timestamp: Optional[datetime] = None
         self._opis: str = ""
+        self._waluta: Waluta = Waluta.PLN
     
     @property
     def od(self) -> Optional[uuid.UUID]:
@@ -61,22 +62,6 @@ class TransakcjaBuilder:
         if value <= 0:
             raise ValueError("Kwota transkacji nie może byc <= 0!")
         self._kwota = value
-
-    @property
-    def timestamp(self) -> Optional[datetime]:
-        return self._timestamp
-
-    @timestamp.setter
-    def timestamp(self, value: datetime):
-        self._timestamp = value
-        
-    def with_timestamp(self, timestamp: datetime) -> TransakcjaBuilder:
-        self._timestamp = timestamp
-        return self
-    
-    def with_time_now(self) -> TransakcjaBuilder:
-        self._timestamp = datetime.now()
-        return self
     
     @property
     def opis(self) -> Optional[str]:
@@ -85,32 +70,28 @@ class TransakcjaBuilder:
     @opis.setter
     def opis(self, opis: str):
         self._opis = opis
+        
+    @property
+    def waluta(self) -> 'Waluta':
+        return self._waluta
+    
+    @waluta.setter
+    def waluta(self, waluta: Waluta) -> None:
+        self._waluta = waluta
     
     def build(self) -> Transakcja:
-        # if not self.czy_poprawne_parametry():
-        #     raise ValueError("Transakcja ma błędne parametry")
-        # else:
-        #     return Transakcja(
-        #         id_rachunku_zrodlowego=self._od,
-        #         id_rachunku_adresata=self._do,
-        #         kwota=self._kwota,
-        #         timestamp=self._timestamp,
-        #         opis=self._opis
-        #     )
         return Transakcja(
                 id_rachunku_zrodlowego=self._od, # type: ignore
                 id_rachunku_adresata=self._do, # type: ignore
                 kwota=self._kwota, # type: ignore
-                timestamp=self._timestamp, # type: ignore
-                opis=self._opis
+                opis=self._opis,
+                waluta=self._waluta
             )
     
     def czy_poprawne_parametry(self) -> bool:
-        if not isinstance(self._od, uuid.UUID) or not isinstance(self._do, uuid.UUID):
+        if not isinstance(self._od, int) or not isinstance(self._do, int):
             return False
         if not isinstance(self._kwota, float):
-            return False
-        if not isinstance(self._timestamp, datetime):
             return False
         if not isinstance(self._opis, str):
             return False

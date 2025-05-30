@@ -7,19 +7,20 @@ import sys
 class WyslijPrzelew:
     
     class Request:
-        def __init__(self) -> None:
-            self.id_nadawcy: int
-            self.id_adresata: int
-            self.kwota: float
-            self.waluta: 'Waluta'
+        def __init__(self, id_nadawcy: int, id_adresata: int, kwota: float, waluta: 'Waluta', opis: str) -> None:
+            self.id_nadawcy: int = id_nadawcy
+            self.id_adresata: int = id_adresata
+            self.kwota: float = kwota
+            self.waluta: 'Waluta' = waluta
+            self.opis: str = opis
     
     class Response:
         def __init__(self, id_transakcji) -> None:
             self.id_transakcji: int = id_transakcji
         
-    def handle(self, request: WyslijPrzelew.Request) -> 'WyslijPrzelew.Response':
-        if (type(WyslijPrzelew.Request) != type(request)):
-            raise ValueError("Typ Requesta != WyslijPrzelew.Request")
+    async def handle(self, request) -> 'WyslijPrzelew.Response':
+        if not isinstance(request, WyslijPrzelew.Request):
+            raise ValueError(f"Otrzymany request: {type(request).__name__} nie jest typu WyslijPrzelew.Request")
         
         db_session = get_db_session()
         
@@ -32,6 +33,9 @@ class WyslijPrzelew:
         
         if waluta_id is None:
             raise ValueError("Nie znaleziono waluty podanej w WyslijPrzelew.Request")
+        
+        if len(request.opis) > 128:
+            raise ValueError("Zbyt długi opis transakcji.")
         
         transakcja = Transakcja(
             amount_numeric = request.kwota,

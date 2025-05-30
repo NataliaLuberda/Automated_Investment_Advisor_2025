@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime   
 
 from application.services.database import Base
 
@@ -34,6 +35,8 @@ class Transakcja(Base):
     id_sender = Column(Integer, nullable=False)
     id_receiver = Column(Integer, nullable=False)
     currency_id = Column(Integer, ForeignKey('currencies.id'), nullable=False)
+    timestamp = Column(DateTime, default=datetime.now())
+    description = Column(String(128))
     currency = relationship("Currency")
     sender = relationship("Account", foreign_keys=[id_sender])
     receiver = relationship("Account", foreign_keys=[id_receiver])

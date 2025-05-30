@@ -3,8 +3,8 @@ from ..models_.konto_uzytkownika_model import KontoUzytkownika
 from ..models_.transakcja_model import Transakcja, TransakcjaBuilder
 from ..models_.rachunek_bankowy_model import RachunekBankowy
 from ..services.konto_service import KontoUzytkownikaService
-from ..services.przelew_service import PrzelewService
-from ..utility.waluty import Waluta
+from application.cqrs.commands.wyslij_przelew import WyslijPrzelew
+from ..utils.waluty import Waluta
 import uuid
 from time import sleep
 
@@ -80,13 +80,6 @@ def pole_przelewu() -> None:
             czy_wziac_adresata_z_listy_kontaktow_switch, 
             'value').classes('w-full').bind_value(transakcja_builder, 'do')
 
-        # ui.input(label="Numer rachunku", 
-        #          validation={
-        #              'Zbyt długi numer rachunku.': lambda x: x is None or len(x) <= 16,
-        #              'Numer rachunku może zawierać tylko cyfry.': lambda x: x is None or x.isdecimal()
-        #              }).bind_visibility_from(
-        #     czy_wziac_adresata_z_listy_kontaktow_switch, 
-        #     'value', lambda x: not x).classes('w-full').props('type=number').bind_value(transakcja_builder, 'do')
         ui.number(label="Numer rachunku")\
         .bind_value(transakcja_builder, 'do')\
         .bind_visibility_from(czy_wziac_adresata_z_listy_kontaktow_switch, 'value', lambda x: not x)\
@@ -102,16 +95,24 @@ def pole_przelewu() -> None:
                     icon="send", 
                     on_click=lambda: _wyslij_przelew_onclick(
                         nowy_przelew_button, 
-                        transakcja_builder.with_time_now().build()
+                        transakcja_builder.build()
                         ))
             
 async def _wyslij_przelew_onclick(element_to_toggle_visible , transakcja: Transakcja) -> bool:
-    przelew_service = PrzelewService()
-    przelew_response = await przelew_service.handle(przelew_service.Request(transakcja=transakcja))
-    if przelew_response.status_ok:
-        ui.notify(f"Wysłano przelew! 🚀 {transakcja}", type="positive")
+    
+    przelew = WyslijPrzelew()
+    request = WyslijPrzelew.Request(
+        id_nadawcy=transakcja.id_rachunku_zrodlowego,
+        id_adresata=transakcja.id_rachunku_adresata,
+        kwota=transakcja.kwota,
+        waluta=transakcja.waluta,
+        opis=transakcja.opis
+    )
+    try:
+        id_przelewu: WyslijPrzelew.Response = await przelew.handle(request)
+        ui.notify(f"Wysłano przelew! 🚀", type="positive")
         setattr(element_to_toggle_visible, 'visible', True)
-        return True
-    else:
-        ui.notify(transakcja, type="negative")
+        return True #???
+    except Exception as e:
+        ui.notify(f"Wysyłka nie powiodła się: {e}", type="negative")
         return False
