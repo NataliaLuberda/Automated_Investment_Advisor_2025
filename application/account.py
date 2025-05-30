@@ -1,4 +1,4 @@
-from application.database import SessionLocal
+from application.services.database import SessionLocal
 from application.models import Account, User
 from application.session import get_logged_user_email
 
