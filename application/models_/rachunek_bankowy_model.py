@@ -1,5 +1,5 @@
 from ..models_.transakcja_model import Transakcja
-from ..utility.waluty import Waluta
+from ..utils.waluty import Waluta
 import uuid
 
 class RachunekBankowy:
