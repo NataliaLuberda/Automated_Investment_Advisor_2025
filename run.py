@@ -2,6 +2,7 @@ from application.database import init_db
 import application.views.login
 import application.views.register
 import application.views.home
+import application.views.konto
 import application.views.accounts
 from nicegui import ui
 
