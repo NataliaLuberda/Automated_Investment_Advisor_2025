@@ -17,8 +17,8 @@ Base = declarative_base()
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
 def init_db():
+    print("this just got run", flush=True)
     Base.metadata.create_all(bind=engine)
     
 def get_db_session():

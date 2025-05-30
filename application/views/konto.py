@@ -56,7 +56,7 @@ def _reset_styling() -> None:
 def pole_przelewu() -> None:
 
     PLACEHOLDER_FOR_NOW: dict[uuid, str] = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"} # type: ignore
-        
+    
     transakcja_builder = TransakcjaBuilder()
 
     with ui.row().classes("flex justify-center items-center"):
@@ -102,7 +102,7 @@ async def _wyslij_przelew_onclick(element_to_toggle_visible , transakcja: Transa
     
     przelew = WyslijPrzelew()
     request = WyslijPrzelew.Request(
-        id_nadawcy=transakcja.id_rachunku_zrodlowego,
+        id_nadawcy=1,
         id_adresata=transakcja.id_rachunku_adresata,
         kwota=transakcja.kwota,
         waluta=transakcja.waluta,

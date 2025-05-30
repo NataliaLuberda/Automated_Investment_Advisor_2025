@@ -24,30 +24,42 @@ class WyslijPrzelew:
         
         db_session = get_db_session()
         
-        waluta_id = db_session.query(Currency).filter(Currency.name == request.waluta.name).first()
-        konto_nadawcy_istnieje = db_session.query(exists().where(Account.id == request.id_nadawcy)).scalar()
-        konto_adresata_istnieje = db_session.query(exists().where(Account.id == request.id_adresata)).scalar()
+        waluta = db_session.query(Currency).filter(Currency.name == request.waluta.name).first()
         
-        if konto_adresata_istnieje is False or konto_nadawcy_istnieje is False:
-            raise ValueError("Błędne id konta adresata lub nadawcy.")
+        konto_nadawcy = db_session.query(Account).filter(Account.id == request.id_nadawcy).first()
+        konto_adresata = db_session.query(Account).filter(Account.id == request.id_adresata).first()
         
-        if waluta_id is None:
-            raise ValueError("Nie znaleziono waluty podanej w WyslijPrzelew.Request")
+        self.validate(konto_nadawcy, konto_adresata, waluta, request.kwota)
         
-        if len(request.opis) > 128:
-            raise ValueError("Zbyt długi opis transakcji.")
+        try:
+            transakcja = Transakcja(
+                amount_numeric = request.kwota,
+                id_sender = request.id_nadawcy,
+                id_receiver = request.id_adresata,
+                currency_id = waluta.id,
+                description=request.opis
+                )
+            
+            db_session.add(transakcja)
+            
+            konto_nadawcy.balance -= request.kwota
+            konto_adresata.balance += request.kwota
+            
+            db_session.commit()
+            return WyslijPrzelew.Response(id_transakcji = transakcja.id)
+        except Exception as exc:
+            raise RuntimeError("Transakcja nie doszła do skutku, coś poszło nie tak.")
+            
         
-        transakcja = Transakcja(
-            amount_numeric = request.kwota,
-            id_sender = request.id_nadawcy,
-            id_receiver = request.id_adresata,
-            currency = request.waluta,
-            currency_id = waluta_id
-            )
+    def validate(self, nadawca: Account, adresat: Account, waluta: Waluta, kwota: float) -> None:
         
-        db_session.add(transakcja)
-        db_session.commit()
-        
-        return WyslijPrzelew.Response(id_transakcji = transakcja.id)
-        
-        
+        if waluta is None:
+            raise ValueError("Nie znaleziono waluty podanej w WyslijPrzelew.Request.")
+        if nadawca is None:
+            raise ValueError("Nie znaleziono nadawcy.")
+        if adresat is None:
+            raise ValueError("Nie znaleziono adresata.")
+        if nadawca.currency != adresat.currency:
+            raise ValueError("Konta adresata i nadawcy są w różnych walutach.")
+        if nadawca.balance - kwota < 0:
+            raise ValueError("Niewystarczające środki na koncie.")
