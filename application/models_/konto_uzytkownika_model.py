@@ -1,10 +1,7 @@
 from __future__ import annotations
 import uuid
-from ..utility.waluty import Waluta
+from application.utils.waluty import Waluta
 from .rachunek_bankowy_model import RachunekBankowy
-
-class ModelStronyKonto:
-    pass
 
 class KontoUzytkownika:
     def __init__(self, imie: str, nazwisko: str) -> None:

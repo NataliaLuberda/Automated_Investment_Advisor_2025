@@ -1,4 +1,4 @@
-from application.database import init_db
+from application.services.database import init_db
 import application.views.login
 import application.views.register
 import application.views.home

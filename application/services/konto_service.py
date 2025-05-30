@@ -18,5 +18,7 @@ class KontoUzytkownikaService(BaseService):
 
     def daj_konto(self, request: KontoUzytkownikaService.Request) -> KontoUzytkownikaService.Response:
         self.validate_request(request=request)
-        #TODO
+
+                
+        
         return KontoUzytkownikaService.Response(KontoUzytkownika('a', 'b'), True)
