@@ -35,6 +35,8 @@ class Transakcja(Base):
     id_receiver = Column(Integer, nullable=False)
     currency_id = Column(Integer, ForeignKey('currencies.id'), nullable=False)
     currency = relationship("Currency")
+    sender = relationship("Account", foreign_keys=[id_sender])
+    receiver = relationship("Account", foreign_keys=[id_receiver])
     
 class Currency(Base):
     __tablename__ = "currencies"
