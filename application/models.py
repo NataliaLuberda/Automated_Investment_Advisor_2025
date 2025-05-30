@@ -32,8 +32,8 @@ class Transakcja(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     amount_numeric = Column(Float(8), nullable=False)
-    id_sender = Column(Integer, nullable=False)
-    id_receiver = Column(Integer, nullable=False)
+    id_sender = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+    id_receiver = Column(Integer, ForeignKey('accounts.id'), nullable=False)
     currency_id = Column(Integer, ForeignKey('currencies.id'), nullable=False)
     timestamp = Column(DateTime, default=datetime.now())
     description = Column(String(128))
