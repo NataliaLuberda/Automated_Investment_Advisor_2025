@@ -22,6 +22,8 @@ class PrzelewService(BaseService):
 
         #TODO wyslanie przelewu do bazy itp itd
         
+        
+        
         sleep(1)
         
         return PrzelewService.Response(status_ok=True)

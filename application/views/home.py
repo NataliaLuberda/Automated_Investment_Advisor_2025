@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import ui # type: ignore
 
 
 @ui.page("/home")
