@@ -1,9 +1,11 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import uuid
-from datetime import datetime
+from dataclasses import dataclass
 from typing import Optional
+
 from application.utils.waluty import Waluta
+
 
 @dataclass(frozen=True)
 class Transakcja:
@@ -12,6 +14,7 @@ class Transakcja:
     kwota: float
     opis: str
     waluta: 'Waluta'
+
 
 class TransakcjaBuilder:
     """Builder dla klasy Transakcja
@@ -27,8 +30,9 @@ class TransakcjaBuilder:
     - def with_datetime(datetime): ustawia self.datetime na datetime
     - def czy_poprawne_parametry()
     """
-    
+
     DLUGOSC_OPISU_LIMIT: int = 128
+
     def __init__(self):
 
         self._od: Optional[uuid.UUID] = None
@@ -36,7 +40,7 @@ class TransakcjaBuilder:
         self._kwota: Optional[float] = None
         self._opis: str = ""
         self._waluta: Waluta = Waluta.PLN
-    
+
     @property
     def od(self) -> Optional[uuid.UUID]:
         return self._od
@@ -62,32 +66,32 @@ class TransakcjaBuilder:
         if value <= 0:
             raise ValueError("Kwota transkacji nie może byc <= 0!")
         self._kwota = value
-    
+
     @property
     def opis(self) -> Optional[str]:
         return self._opis
-    
+
     @opis.setter
     def opis(self, opis: str):
         self._opis = opis
-        
+
     @property
     def waluta(self) -> 'Waluta':
         return self._waluta
-    
+
     @waluta.setter
     def waluta(self, waluta: Waluta) -> None:
         self._waluta = waluta
-    
+
     def build(self) -> Transakcja:
         return Transakcja(
-                id_rachunku_zrodlowego=self._od, # type: ignore
-                id_rachunku_adresata=self._do, # type: ignore
-                kwota=self._kwota, # type: ignore
-                opis=self._opis,
-                waluta=self._waluta
-            )
-    
+            id_rachunku_zrodlowego=self._od,  # type: ignore
+            id_rachunku_adresata=self._do,  # type: ignore
+            kwota=self._kwota,  # type: ignore
+            opis=self._opis,
+            waluta=self._waluta
+        )
+
     def czy_poprawne_parametry(self) -> bool:
         if not isinstance(self._od, int) or not isinstance(self._do, int):
             return False

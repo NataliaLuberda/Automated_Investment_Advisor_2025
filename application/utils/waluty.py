@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Waluta(Enum):
     USD = 1
     EUR = 2

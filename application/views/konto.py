@@ -1,25 +1,23 @@
-from nicegui import ui # type: ignore
+import uuid
+
+from nicegui import ui  # type: ignore
+
+from application.cqrs.commands.wyslij_przelew import WyslijPrzelew
 from ..models_.konto_uzytkownika_model import KontoUzytkownika
 from ..models_.transakcja_model import Transakcja, TransakcjaBuilder
-from ..models_.rachunek_bankowy_model import RachunekBankowy
-from ..services.konto_service import KontoUzytkownikaService
-from application.cqrs.commands.wyslij_przelew import WyslijPrzelew
 from ..utils.waluty import Waluta
-import uuid
-from time import sleep
+
 
 @ui.page('/')
 def konto_page():
     uzytkownik = KontoUzytkownika("Jan", "Kowalski")
     uzytkownik.dodaj_rachunek_bankowy(Waluta.PLN, kwota=2137.20)
     uzytkownik.dodaj_rachunek_bankowy(Waluta.USD, kwota=1776.0)
-    
+
     _reset_styling()
 
     with ui.element('div').classes('w-screen h-screen flex items-center justify-center'):
-
         with ui.card().classes('w-96 min-h-0 max-h-full flex flex-col items-left justify-left'):
-
             with ui.card_section().classes("w-full"):
                 ui.label(uzytkownik.daj_imie_nazwisko()).classes("text-4xl w-full text-center")
 
@@ -42,6 +40,7 @@ def konto_page():
                                 ui.label(f"Stan konta: {rachunek.kwota} {rachunek._waluta.name}")
                                 ui.separator()
 
+
 def _reset_styling() -> None:
     ui.add_head_html('''
         <style>
@@ -52,54 +51,55 @@ def _reset_styling() -> None:
             }
         </style>
         ''')
-    
-def pole_przelewu() -> None:
 
-    PLACEHOLDER_FOR_NOW: dict[uuid, str] = {1: "Jan Joński", 2: "Artur Arktyczny", 3: "Tomasz Totalitarny"} # type: ignore
-    
+
+def pole_przelewu() -> None:
+    PLACEHOLDER_FOR_NOW: dict[uuid, str] = {1: "Jan Joński", 2: "Artur Arktyczny",
+                                            3: "Tomasz Totalitarny"}  # type: ignore
+
     transakcja_builder = TransakcjaBuilder()
 
     with ui.row().classes("flex justify-center items-center"):
-        nowy_przelew_button = ui.button("Nowy przelew", 
-            icon="add", 
-            on_click=lambda: setattr(nowy_przelew_button, 'visible', False))
+        nowy_przelew_button = ui.button("Nowy przelew",
+                                        icon="add",
+                                        on_click=lambda: setattr(nowy_przelew_button, 'visible', False))
 
-    with ui.column().bind_visibility_from(nowy_przelew_button, 'visible', lambda x: not x)\
+    with ui.column().bind_visibility_from(nowy_przelew_button, 'visible', lambda x: not x) \
             .classes("w-full border-4") as formularz:
-                
-        ui.select(PLACEHOLDER_FOR_NOW, label='Z rachunku:', value=1).classes('w-full').bind_value(transakcja_builder, 'od')
-                
-        ui.number(label="Kwota przelewu", value=0, min=0.01, max=999999999.99, step=1.0)\
-        .classes('flex w-full justify-center items-center')\
-        .bind_value(transakcja_builder, 'kwota')
+        ui.select(PLACEHOLDER_FOR_NOW, label='Z rachunku:', value=1).classes('w-full').bind_value(transakcja_builder,
+                                                                                                  'od')
+
+        ui.number(label="Kwota przelewu", value=0, min=0.01, max=999999999.99, step=1.0) \
+            .classes('flex w-full justify-center items-center') \
+            .bind_value(transakcja_builder, 'kwota')
 
         with ui.row().classes('flex items-center justify-center align-content'):
             czy_wziac_adresata_z_listy_kontaktow_switch = ui.switch("Adresat z kontaktów")
 
-        adresat_selektor = ui.select(PLACEHOLDER_FOR_NOW, label='Adresat',value=1).bind_visibility_from(
-            czy_wziac_adresata_z_listy_kontaktow_switch, 
+        adresat_selektor = ui.select(PLACEHOLDER_FOR_NOW, label='Adresat', value=1).bind_visibility_from(
+            czy_wziac_adresata_z_listy_kontaktow_switch,
             'value').classes('w-full').bind_value(transakcja_builder, 'do')
 
-        ui.number(label="Numer rachunku")\
-        .bind_value(transakcja_builder, 'do')\
-        .bind_visibility_from(czy_wziac_adresata_z_listy_kontaktow_switch, 'value', lambda x: not x)\
-        .classes('w-full')
-    
-        ui.textarea(label="Opis przelewu", validation={"Zbyt długi opis":lambda x: len(x) <= TransakcjaBuilder.DLUGOSC_OPISU_LIMIT})\
-            .classes('w-full')\
-            .bind_value(transakcja_builder, 'opis')\
+        ui.number(label="Numer rachunku") \
+            .bind_value(transakcja_builder, 'do') \
+            .bind_visibility_from(czy_wziac_adresata_z_listy_kontaktow_switch, 'value', lambda x: not x) \
+            .classes('w-full')
+
+        ui.textarea(label="Opis przelewu",
+                    validation={"Zbyt długi opis": lambda x: len(x) <= TransakcjaBuilder.DLUGOSC_OPISU_LIMIT}) \
+            .classes('w-full') \
+            .bind_value(transakcja_builder, 'opis') \
             .props(f"maxlength={TransakcjaBuilder.DLUGOSC_OPISU_LIMIT}")
-        
-            
-        ui.button("Wyślij", 
-                    icon="send", 
-                    on_click=lambda: _wyslij_przelew_onclick(
-                        nowy_przelew_button, 
-                        transakcja_builder.build()
-                        ))
-            
-async def _wyslij_przelew_onclick(element_to_toggle_visible , transakcja: Transakcja) -> bool:
-    
+
+        ui.button("Wyślij",
+                  icon="send",
+                  on_click=lambda: _wyslij_przelew_onclick(
+                      nowy_przelew_button,
+                      transakcja_builder.build()
+                  ))
+
+
+async def _wyslij_przelew_onclick(element_to_toggle_visible, transakcja: Transakcja) -> bool:
     przelew = WyslijPrzelew()
     request = WyslijPrzelew.Request(
         id_nadawcy=1,
@@ -112,7 +112,7 @@ async def _wyslij_przelew_onclick(element_to_toggle_visible , transakcja: Transa
         id_przelewu: WyslijPrzelew.Response = await przelew.handle(request)
         ui.notify(f"Wysłano przelew! 🚀", type="positive")
         setattr(element_to_toggle_visible, 'visible', True)
-        return True #???
+        return True  # ???
     except Exception as e:
         ui.notify(f"Wysyłka nie powiodła się: {e}", type="negative")
         return False

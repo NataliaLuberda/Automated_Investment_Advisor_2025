@@ -1,4 +1,5 @@
 from nicegui import ui
+
 from application.views.login import login_page
 
 
