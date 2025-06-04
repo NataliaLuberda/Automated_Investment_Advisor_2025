@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -19,7 +18,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db():
-    print("this just got run", flush=True)
     Base.metadata.create_all(bind=engine)
 
 

@@ -3,7 +3,7 @@ from application.services.database import SessionLocal
 from application.session import get_logged_user_email
 
 
-def get_user_accounts():
+def get_user_accounts() -> list[Account]:
     db = SessionLocal()
     email = get_logged_user_email()
     user = db.query(User).filter_by(email=email).first()
