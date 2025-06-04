@@ -1,5 +1,4 @@
 from nicegui import ui
-
 from application.auth import create_user
 
 

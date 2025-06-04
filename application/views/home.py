@@ -1,5 +1,4 @@
 from nicegui import ui
-
 from application.session import logout_user
 
 

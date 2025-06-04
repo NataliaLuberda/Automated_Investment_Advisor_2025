@@ -1,8 +1,6 @@
 from datetime import datetime
-
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-
 from application.services.database import Base
 
 
@@ -13,7 +11,6 @@ class Account(Base):
     currency = Column(String(10), nullable=False)
     balance = Column(Float, default=0.0)
     user_id = Column(Integer, ForeignKey('users.id'))
-
     user = relationship("User", back_populates="accounts")
 
 
@@ -32,12 +29,14 @@ class Transakcja(Base):
     amount_numeric = Column(Float(8), nullable=False)
     id_sender = Column(Integer, ForeignKey('accounts.id'), nullable=False)
     id_receiver = Column(Integer, ForeignKey('accounts.id'), nullable=False)
-    currency_id = Column(Integer, ForeignKey('currencies.id'), nullable=False)
     timestamp = Column(DateTime, default=datetime.now())
     description = Column(String(128), nullable=False)
-    currency = relationship("Currency")
     sender = relationship("Account", foreign_keys=[id_sender])
     receiver = relationship("Account", foreign_keys=[id_receiver])
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.MAX_DESC_LENGTH = 128
 
 
 class Currency(Base):

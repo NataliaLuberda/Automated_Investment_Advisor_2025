@@ -1,11 +1,6 @@
 from application.services.database import init_db
-import application.views.login
-import application.views.register
-import application.views.home
-import application.views.konto
-import application.views.accounts
+from application.views import konto, login, home, accounts
 from nicegui import ui
-
 
 def start_app():
     ui.run(
