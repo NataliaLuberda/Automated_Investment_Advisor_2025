@@ -4,6 +4,7 @@ from application.cqrs.queries.daj_uzytkownika import DajUzytkownika
 from application.session import get_logged_user_email
 from application.models import User, Account, Transakcja
 from application.account import get_user_accounts
+from application.cqrs.queries.daj_historie_transakcji import daj_historie_transakcji_uzytkownika
 from dataclasses import dataclass
 
 @ui.page('/konto')
@@ -12,6 +13,7 @@ def konto_page():
     uzytkownik: User = get_user_details()
     rachunki_uzytkownika: list[Account] = get_user_accounts()
     user_info = UserInfo(uzytkownik, rachunki_uzytkownika)
+    historia_transakcji = daj_historie_transakcji_uzytkownika(uzytkownik.id)
     
     _reset_styling()
 
@@ -25,14 +27,24 @@ def konto_page():
 
             with ui.card_section():
                 with ui.tabs() as tabs:
-                    wydatki = ui.tab("Wydatki")
                     historia = ui.tab("Historia")
                     rachunki = ui.tab("Moje rachunki")
-                with ui.tab_panels(tabs, value=wydatki):
-                    with ui.tab_panel(wydatki):
-                        ui.label("Twoja historia wydatków")
+                with ui.tab_panels(tabs, value=historia):
                     with ui.tab_panel(historia):
-                        ui.label("Twoja historia wydatków")
+                        ui.label("Historia transakcji")
+                        
+                        for t in historia_transakcji:
+                            if t.id_sender == uzytkownik.id:
+                                color = "red"
+                                przychodzacy_wychodzacy = "wychodzący"
+                            else:
+                                color = "green"
+                                przychodzacy_wychodzacy = "przychodzący"
+                                
+                            with ui.row().classes(f"text-{color}-500 border-2"):
+                                ui.label(f"Data: {t.timestamp.date()}")
+                                ui.label(f"Przelew {przychodzacy_wychodzacy}: {t.amount_numeric}") 
+                                
                     with ui.tab_panel(rachunki):
                         for rachunek in rachunki_uzytkownika:
                             with ui.row():
