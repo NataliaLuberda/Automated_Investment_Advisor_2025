@@ -10,5 +10,5 @@ class DajUzytkownika:
 
     @staticmethod
     def handle(request: Request) -> 'User':
-        session = get_db_session()
-        return session.query(User).filter(User.email == request.email).first()
+        with get_db_session() as session:
+            return session.query(User).filter(User.email == request.email).first()
