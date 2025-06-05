@@ -1,6 +1,11 @@
+import requests
+
+from application.database import SessionLocal
 from application.models import Account, User
 from application.services.database import SessionLocal
 from application.session import get_logged_user_email
+
+API_KEY = "cur_live_WllS2ns9qh9K1PIRxkpLkFoYgYc6shSXDvZBnO51"
 
 
 def get_user_accounts() -> list[Account]:
@@ -74,3 +79,44 @@ def update_account_balance(account_id: int, new_balance: float) -> str:
     db.commit()
     db.close()
     return f"✏️ Zaktualizowano saldo konta {account.currency} na {new_balance:.2f}"
+
+
+def convert_between_currencies(amount: float, from_currency: str, to_currency: str) -> float:
+    try:
+        if from_currency == to_currency:
+            return round(amount, 2)
+
+        rates = get_currencyapi_rates(base_currency=from_currency, symbols=[to_currency])
+        converted = amount * rates[to_currency]
+        return round(converted, 2)
+
+    except KeyError:
+        raise ValueError(f"Brak kursu waluty: {from_currency} → {to_currency}")
+    except Exception as e:
+        raise ValueError(f"Błąd konwersji {from_currency} → {to_currency}: {e}")
+
+
+def get_currencyapi_rates(base_currency: str = "PLN", symbols: list[str] = None) -> dict:
+    if symbols is None:
+        symbols = ["USD", "EUR", "GBP", "CAD"]
+
+    symbols_param = ",".join(symbols)
+    url = f"https://api.currencyapi.com/v3/latest?apikey={API_KEY}&base_currency={base_currency}&currencies={symbols_param}"
+
+    try:
+        response = requests.get(url)
+        data = response.json()
+
+        if "data" not in data:
+            raise ValueError(f"Nie udało się pobrać kursów: {data}")
+
+        rates = {}
+        for symbol in symbols:
+            try:
+                rates[symbol] = data["data"][symbol]["value"]
+            except KeyError:
+                raise ValueError(f"❌ Brak kursu {symbol} względem {base_currency}")
+        return rates
+
+    except Exception as e:
+        raise ValueError(f"❌ {e}")
