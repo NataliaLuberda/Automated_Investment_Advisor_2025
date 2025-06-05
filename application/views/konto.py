@@ -7,14 +7,14 @@ from application.account import get_user_accounts
 from application.cqrs.queries.daj_historie_transakcji import daj_historie_transakcji_uzytkownika
 from dataclasses import dataclass
 
+
 @ui.page('/konto')
 def konto_page():
-    
     uzytkownik: User = get_user_details()
     rachunki_uzytkownika: list[Account] = get_user_accounts()
     user_info = UserInfo(uzytkownik, rachunki_uzytkownika)
     historia_transakcji = daj_historie_transakcji_uzytkownika(uzytkownik.id)
-    
+
     _reset_styling()
 
     with ui.element('div').classes('w-screen h-screen flex items-center justify-center'):
@@ -32,7 +32,7 @@ def konto_page():
                 with ui.tab_panels(tabs, value=historia):
                     with ui.tab_panel(historia):
                         ui.label("Historia transakcji")
-                        
+
                         for t in historia_transakcji:
                             if t.id_sender == uzytkownik.id:
                                 color = "red"
@@ -40,11 +40,11 @@ def konto_page():
                             else:
                                 color = "green"
                                 przychodzacy_wychodzacy = "przychodzący"
-                                
+
                             with ui.row().classes(f"text-{color}-500 border-2"):
                                 ui.label(f"Data: {t.timestamp.date()}")
-                                ui.label(f"Przelew {przychodzacy_wychodzacy}: {t.amount_numeric}") 
-                                
+                                ui.label(f"Przelew {przychodzacy_wychodzacy}: {t.amount_numeric}")
+
                     with ui.tab_panel(rachunki):
                         for rachunek in rachunki_uzytkownika:
                             with ui.row():
@@ -65,7 +65,6 @@ def _reset_styling() -> None:
 
 
 def pole_przelewu(user_info: 'UserInfo') -> None:
-
     transakcja = Transakcja()
 
     with ui.row().classes("flex justify-center items-center"):
@@ -75,12 +74,11 @@ def pole_przelewu(user_info: 'UserInfo') -> None:
 
     with ui.column().bind_visibility_from(nowy_przelew_button, 'visible', lambda x: not x) \
             .classes("w-full border-4"):
-        
         select_options = {
             acc.id: f'{acc.currency}'
             for acc in user_info.account_list
         }
-        
+
         ui.select(
             options=select_options,
             label='Z rachunku:',
@@ -120,14 +118,16 @@ async def _wyslij_przelew_onclick(element_to_toggle_visible, transakcja: Transak
         await WyslijPrzelew.handle(request)
         ui.notify(f"Wysłano przelew! 🚀", type="positive")
         setattr(element_to_toggle_visible, 'visible', True)
-        
+
     except Exception as e:
         ui.notify(f"Wysyłka nie powiodła się: {e}", type="negative")
+
 
 def get_user_details() -> 'User':
     uemail = get_logged_user_email()
     request = DajUzytkownika.Request(uemail)
     return DajUzytkownika.handle(request=request)
+
 
 @dataclass
 class UserInfo:

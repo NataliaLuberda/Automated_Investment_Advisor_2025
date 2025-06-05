@@ -3,6 +3,7 @@ from nicegui import ui
 
 from application.account import create_account
 from application.account import get_user_accounts, delete_account
+from application.auth import get_user_by_email
 from application.decorator.login_decorator import requires_login
 from application.session import get_logged_user_email
 from application.utils.catched_total_balance import get_cached_total_balance_for_user, reset_user_balance
@@ -18,7 +19,6 @@ def transfer_from_account_dialog(source_acc):
         with ui.card().classes("p-6 w-[350px] flex flex-col gap-4"):
             ui.label(f"💸 Przelej z {source_acc.currency} ({source_acc.balance:.2f})").classes("text-xl font-bold")
 
-            # WALUTY, nie konta!
             currencies = fetch_currency_codes()
             all_currencies = list(currencies.keys()) if currencies else ["PLN", "USD", "EUR", "GBP", "CHF", "JPY"]
             dest_currencies = [cur for cur in all_currencies if cur != source_acc.currency]
@@ -148,10 +148,13 @@ def render_foreign_accounts(foreign_accounts):
 @ui.page("/account")
 @requires_login
 def account_page():
+    email = get_logged_user_email()
     accounts = get_user_accounts()
-    default_account = next((acc for acc in accounts if acc.currency == "PLN"), None)
-    foreign_accounts = [acc for acc in accounts if acc.currency != "PLN"]
-    total_balance = get_cached_total_balance_for_user(get_logged_user_email(), accounts)
+    user = get_user_by_email(email)
+    default_currency = user.default_currency if user and user.default_currency else "PLN"
+    default_account = next((acc for acc in accounts if acc.currency == default_currency), None)
+    foreign_accounts = [acc for acc in accounts if acc.currency != default_currency]
+    total_balance = get_cached_total_balance_for_user(email, accounts)
 
     add_dialog = add_account_dialog()
 

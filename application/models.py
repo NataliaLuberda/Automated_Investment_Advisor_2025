@@ -20,6 +20,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    default_currency = Column(String(10), nullable=True)
     accounts = relationship("Account", back_populates="user")
 
 
@@ -33,7 +34,7 @@ class Transakcja(Base):
     description = Column(String(128), nullable=False)
     sender = relationship("Account", foreign_keys=[id_sender])
     receiver = relationship("Account", foreign_keys=[id_receiver])
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.MAX_DESC_LENGTH = 128
