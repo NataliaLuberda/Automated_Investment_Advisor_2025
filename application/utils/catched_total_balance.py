@@ -1,4 +1,4 @@
-from application.account import convert_between_currencies
+from application.utils.currency import convert_between_currencies
 
 _user_balance_cache = {}
 
