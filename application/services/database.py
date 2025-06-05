@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from contextlib import contextmanager
 
 load_dotenv()
 
@@ -21,5 +22,10 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
 
+@contextmanager
 def get_db_session():
-    return SessionLocal()
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
