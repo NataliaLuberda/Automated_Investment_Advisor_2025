@@ -1,5 +1,5 @@
-from application.database import SessionLocal
 from application.models import User
+from application.services.database import SessionLocal
 from application.utils.hashing import hash_password, verify_password
 
 

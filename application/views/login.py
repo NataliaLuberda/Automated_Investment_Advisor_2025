@@ -1,4 +1,5 @@
 from nicegui import ui
+
 from application.auth import is_user_data_correct
 from application.session import set_logged_user
 
@@ -34,7 +35,6 @@ def create_register_redirect():
         ui.link("Zarejestruj się", "/register").classes(
             "text-blue-500 hover:text-blue-600 transition duration-200"
         )
-
 
 @ui.page('/')
 @ui.page('/login')

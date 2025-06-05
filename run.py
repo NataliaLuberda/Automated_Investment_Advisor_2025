@@ -1,8 +1,9 @@
-from application.database import init_db
-import application.views.login
-import application.views.register
-import application.views.home
-import application.views.accounts
+from application.services.database import init_db
+from application.views.login import login_page
+from application.views.accounts import account_page
+from application.views.register import register_page
+from application.views.home import home_page
+from application.views.konto import konto_page
 from nicegui import ui
 
 

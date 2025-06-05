@@ -1,5 +1,6 @@
 from functools import wraps
-from nicegui import context, ui
+
+from nicegui import ui
 
 from application.session import get_logged_user_email
 
@@ -12,4 +13,5 @@ def requires_login(func):
             ui.navigate.to("/login")
             return
         return func(*args, **kwargs)
+
     return wrapper
