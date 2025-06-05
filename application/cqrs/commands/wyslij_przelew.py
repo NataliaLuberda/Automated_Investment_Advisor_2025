@@ -1,9 +1,9 @@
-from application.models import Account, Transakcja, Currency
+from application.models import Account, Transakcja
 from application.services.database import get_db_session
 from dataclasses import dataclass
 
+
 class WyslijPrzelew:
-    
     @dataclass
     class Request:
         id_nadawcy: int
