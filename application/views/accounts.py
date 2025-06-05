@@ -6,20 +6,55 @@ from application.account import get_user_accounts, delete_account
 from application.decorator.login_decorator import requires_login
 from application.session import get_logged_user_email
 from application.utils.catched_total_balance import get_cached_total_balance_for_user, reset_user_balance
+from application.utils.currency import fetch_currency_codes
+from application.utils.transfer import transfer_between_accounts
 
 ui.add_head_html('<link rel="stylesheet" href="/static/style.css">')
 
 
-def fetch_currency_codes():
-    url = "https://openexchangerates.org/api/currencies.json"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return {}
-    except Exception as e:
-        return {}
+def transfer_from_account_dialog(source_acc):
+    dialog = ui.dialog()
+    with dialog:
+        with ui.card().classes("p-6 w-[350px] flex flex-col gap-4"):
+            ui.label(f"💸 Przelej z {source_acc.currency} ({source_acc.balance:.2f})").classes("text-xl font-bold")
+
+            # WALUTY, nie konta!
+            currencies = fetch_currency_codes()
+            all_currencies = list(currencies.keys()) if currencies else ["PLN", "USD", "EUR", "GBP", "CHF", "JPY"]
+            dest_currencies = [cur for cur in all_currencies if cur != source_acc.currency]
+
+            currency_select = ui.select(
+                dest_currencies,
+                label="Waluta docelowa"
+            ).props("clearable use-input input-debounce=0").classes("w-full")
+
+            amount_input = ui.input(label="Kwota").props("type=number").classes("w-full")
+
+            def handle_transfer():
+                try:
+                    if not currency_select.value:
+                        ui.notify("❌ Wybierz walutę docelową", type="negative")
+                        return
+
+                    if not amount_input.value or float(amount_input.value) <= 0:
+                        ui.notify("❌ Podaj poprawną kwotę", type="negative")
+                        return
+
+                    amount = float(amount_input.value)
+                    dest_currency = currency_select.value
+
+                    result = transfer_between_accounts(source_acc.id, dest_currency, amount)
+                    ui.notify(result)
+                    dialog.close()
+                    reset_user_balance(get_logged_user_email())
+                    ui.navigate.reload()
+                except Exception as e:
+                    ui.notify(f"❌ Błąd: {e}", type="negative")
+
+            ui.button("Przelej", on_click=handle_transfer).classes(
+                "bg-green-600 text-white py-1 px-4 self-end"
+            )
+    return dialog
 
 
 def handle_delete_account(account):
@@ -85,20 +120,27 @@ def render_default_account(default_account):
 
 
 def render_foreign_accounts(foreign_accounts):
-    ui.label("🌍 Inne konta walutowe").classes("text-lg font-bold text-gray-700")
+    accounts = get_user_accounts()
 
+    ui.label("🌍 Inne konta walutowe").classes("text-lg font-bold text-gray-700")
     with ui.column().classes("gap-4").style("max-height: 65vh; overflow-y: auto;"):
         if foreign_accounts:
             for acc in foreign_accounts:
+                transfer_dlg = transfer_from_account_dialog(acc)
+
                 with ui.card().classes("p-4 w-full bg-white shadow rounded-lg flex flex-row justify-between "
                                        "items-center"):
                     with ui.column():
                         ui.label(f"{acc.currency}").classes("text-lg font-semibold")
                         ui.label(f"{acc.balance:.2f} {acc.currency}").classes("text-lg")
 
-                    ui.button("🗑", on_click=lambda a=acc: handle_delete_account(a)).classes(
-                        "bg-red-500 text-white py-1 px-3 rounded"
-                    )
+                    with ui.row().classes("gap-2"):
+                        ui.button("💸", on_click=transfer_dlg.open).classes(
+                            "bg-green-500 text-white py-1 px-3 rounded"
+                        )
+                        ui.button("🗑", on_click=lambda a=acc: handle_delete_account(a)).classes(
+                            "bg-red-500 text-white py-1 px-3 rounded"
+                        )
         else:
             ui.label("Brak innych kont walutowych").classes("text-gray-500 italic")
 
