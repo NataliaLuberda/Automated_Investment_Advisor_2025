@@ -20,31 +20,31 @@ class WyslijPrzelew:
         if not isinstance(request, WyslijPrzelew.Request):
             raise ValueError(f"Otrzymany request: {type(request).__name__} nie jest typu WyslijPrzelew.Request")
 
-        db_session = get_db_session()
+        with get_db_session() as db_session:
 
-        konto_nadawcy = db_session.query(Account).filter(Account.id == request.id_nadawcy).first()
-        konto_adresata = db_session.query(Account).filter(Account.id == request.id_adresata).first()
+            konto_nadawcy = db_session.query(Account).filter(Account.id == request.id_nadawcy).first()
+            konto_adresata = db_session.query(Account).filter(Account.id == request.id_adresata).first()
 
-        WyslijPrzelew.validate(konto_nadawcy, konto_adresata, request.kwota)
+            WyslijPrzelew.validate(konto_nadawcy, konto_adresata, request.kwota)
 
-        try:
-            transakcja = Transakcja(
-                amount_numeric=request.kwota,
-                id_sender=request.id_nadawcy,
-                id_receiver=request.id_adresata,
-                description=request.opis
-            )
+            try:
+                transakcja = Transakcja(
+                    amount_numeric=request.kwota,
+                    id_sender=request.id_nadawcy,
+                    id_receiver=request.id_adresata,
+                    description=request.opis
+                )
 
-            db_session.add(transakcja)
+                db_session.add(transakcja)
 
-            konto_nadawcy.balance -= request.kwota
-            konto_adresata.balance += request.kwota
+                konto_nadawcy.balance -= request.kwota
+                konto_adresata.balance += request.kwota
 
-            db_session.commit()
-            return WyslijPrzelew.Response(id_transakcji=transakcja.id)
-        except Exception as exc:
-            print(exc, flush=True)
-            raise RuntimeError("Transakcja nie doszła do skutku, coś poszło nie tak.")
+                db_session.commit()
+                return WyslijPrzelew.Response(id_transakcji=transakcja.id)
+            except Exception as exc:
+                print(exc, flush=True)
+                raise RuntimeError("Transakcja nie doszła do skutku, coś poszło nie tak.")
 
     @staticmethod
     def validate(nadawca: Account, adresat: Account, kwota: float) -> None:
