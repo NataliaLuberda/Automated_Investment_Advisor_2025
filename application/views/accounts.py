@@ -4,7 +4,7 @@ from application.account import create_account
 from application.account import get_user_accounts, delete_account
 from application.auth import get_user_by_email
 from application.decorator.login_decorator import requires_login
-from application.session import get_logged_user_email
+from application.session import get_logged_user_email, logout_user
 from application.utils.catched_total_balance import get_cached_total_balance_for_user, reset_user_balance
 from application.utils.currency import fetch_currency_codes
 from application.utils.transfer import transfer_between_accounts
@@ -106,23 +106,26 @@ def add_account_dialog():
     return dialog
 
 
-def render_total_balance(total_balance: float):
-    with ui.card().classes("p-6 bg-white shadow rounded-lg flex-1"):
-        ui.label("💰 Suma wszystkich środków").classes("text-lg font-bold text-gray-700")
-        ui.label(f"{total_balance:.2f} PLN").classes("text-3xl text-green-600")
+def render_total_balance(total_balance: float, default_account):
+    with ui.card().classes(
+            "w-full max-w-2xl p-8 bg-green-500 text-white rounded-xl shadow-md hover:shadow-xl transition-transform "
+            "duration-300 hover:scale-105 mb-6"):
+        ui.label("💰 Suma wszystkich środków").classes("text-lg font-semibold mb-2")
+        ui.label(f"{total_balance:.2f} {default_account.currency}").classes("text-4xl font-bold text-green-200")
 
 
 def render_default_account(default_account):
-    with ui.card().classes("p-6 bg-white shadow rounded-lg flex-1"):
-        ui.label("🏦 Konto domyślne (PLN)").classes("text-lg font-bold text-gray-700")
-        ui.label(f"{default_account.balance:.2f} PLN").classes("text-3xl text-blue-600")
+    with ui.card().classes(
+            "w-full max-w-2xl p-8 bg-blue-500 text-white rounded-xl shadow-md hover:shadow-xl transition-transform "
+            "duration-300 hover:scale-105"):
+        ui.label(f"🏦 Konto domyślne ({default_account.currency})").classes("text-lg font-semibold mb-2")
+        ui.label(f"{default_account.balance:.2f} {default_account.currency}").classes(
+            "text-4xl font-bold text-blue-200")
 
 
 def render_foreign_accounts(foreign_accounts):
-    accounts = get_user_accounts()
-
     ui.label("🌍 Inne konta walutowe").classes("text-lg font-bold text-gray-700")
-    with ui.column().classes("gap-4").style("max-height: 65vh; overflow-y: auto;"):
+    with ui.column().classes("gap-4 w-full").style("max-height: 65vh; overflow-y: auto;"):
         if foreign_accounts:
             for acc in foreign_accounts:
                 transfer_dlg = transfer_from_account_dialog(acc)
@@ -154,17 +157,30 @@ def account_page():
     default_account = next((acc for acc in accounts if acc.currency == default_currency), None)
     foreign_accounts = [acc for acc in accounts if acc.currency != default_currency]
     total_balance = get_cached_total_balance_for_user(email, accounts)
-
     add_dialog = add_account_dialog()
 
-    with ui.element("div").classes("w-screen h-screen overflow-hidden bg-gray-100 flex"):
-        with ui.column().classes("w-1/2 h-full justify-start items-stretch p-8 gap-6"):
-            render_total_balance(total_balance)
-            if default_account:
-                render_default_account(default_account)
+    with ui.column().classes("items-center w-full"):
+        with ui.row().classes(
+                "w-full justify-between items-center px-10 py-4 bg-gradient-to-r from-blue-500 to-purple-500 "
+                "text-white shadow-lg rounded-lg "
+        ):
+            ui.button(icon="home", on_click=lambda: ui.navigate.to("/home")).props("flat color=white")
+            ui.button(icon="savings", on_click=lambda: ui.navigate.to("/savings")).props("flat color=white")
+            ui.button(icon="logout", on_click=lambda: (logout_user(), ui.navigate.to("/login"))).props(
+                "flat color=white")
 
-        with ui.column().classes("w-1/2 h-full justify-start items-stretch overflow-auto p-8 gap-6"):
-            render_foreign_accounts(foreign_accounts)
-            ui.button("➕ Dodaj konto", on_click=add_dialog.open).classes(
-                "mt-4 bg-blue-500 text-white py-2 px-6 rounded self-start"
-            )
+        ui.separator().classes("my-4")
+
+        with ui.row().classes("w-full max-w-7xl gap-8 justify-center items-start flex-wrap"):
+            with ui.column().classes("min-w-[350px] max-w-xl w-full gap-10 flex-1 justify-center items-center") \
+                    .style("height: 80vh;"):
+                if default_account:
+                    render_total_balance(total_balance, default_account)
+                    render_default_account(default_account)
+
+            with ui.column().classes("min-w-[350px] max-w-xl w-full gap-10 flex-1 justify-center items-center") \
+                    .style("height: 80vh;"):
+                render_foreign_accounts(foreign_accounts)
+                ui.button("➕ Dodaj konto", on_click=add_dialog.open).classes(
+                    "mt-8 bg-blue-500 text-white py-2 px-6 rounded w-full"
+                )

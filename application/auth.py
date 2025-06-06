@@ -3,19 +3,19 @@ from application.services.database import get_db_session
 from application.utils.hashing import hash_password, verify_password
 
 
-def get_user_by_email(db, email: str):
-    return db.query(User).filter(User.email == email).first()
+def get_user_by_email(email: str):
+    with get_db_session() as db:
+        return db.query(User).filter(User.email == email).first()
 
 
 def is_user_data_correct(email: str, password: str) -> bool:
-    with get_db_session() as db:
-        user = get_user_by_email(db, email)
-        return user and verify_password(password, user.password_hash)
+    user = get_user_by_email(email)
+    return user and verify_password(password, user.password_hash)
 
 
 def create_user(email: str, password: str, default_currency: str) -> bool:
     with get_db_session() as db:
-        if get_user_by_email(db, email):
+        if get_user_by_email(email):
             return False
         user = User(
             email=email,

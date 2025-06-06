@@ -91,3 +91,22 @@ def update_account_balance(account_id: int, new_balance: float) -> str:
         account.balance = new_balance
         db.commit()
         return f"✏️ Zaktualizowano saldo konta {account.currency} na {new_balance:.2f}"
+
+
+def update_default_account_currency(selected_code: str):
+    with get_db_session() as db:
+        email = get_logged_user_email()
+        user = db.query(User).filter_by(email=email).first()
+        if not user:
+            return "❌ Operacja nie powiodła się!"
+
+        existing = db.query(Account).filter_by(currency=selected_code.strip().upper(), user_id=user.id).first()
+        if not existing:
+            acc = Account(currency=selected_code.strip().upper(), balance=0.0, user_id=user.id)
+            db.add(acc)
+            db.commit()
+            db.refresh(acc)
+
+        user.default_currency = selected_code.strip().upper()
+        db.commit()
+        return f"✏️ Zaktualizowano konto domyślne na {selected_code.upper()} (jeśli nie miałeś konta, już je masz 😎)"
