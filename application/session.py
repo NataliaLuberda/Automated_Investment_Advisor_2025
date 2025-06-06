@@ -1,5 +1,4 @@
 from nicegui import app
-from application.models import Account
 
 
 def set_logged_user(email: str):

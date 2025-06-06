@@ -1,12 +1,11 @@
 from application.models import User, Account
-from application.services.database import SessionLocal
+from application.services.database import get_db_session
 from application.session import get_logged_user_email
 from application.utils.currency import convert_between_currencies
 
 
 def transfer_between_accounts(from_account_id: int, to_currency: str, amount: float) -> str:
-    db = SessionLocal()
-    try:
+    with get_db_session() as db:
         email = get_logged_user_email()
         if not email:
             return "❌ Użytkownik niezalogowany!"
@@ -44,5 +43,3 @@ def transfer_between_accounts(from_account_id: int, to_currency: str, amount: fl
         db.commit()
         return (f"✅ Przelano {amount:.2f} {from_acc.currency} "
                 f"(~{converted_amount:.2f} {to_acc.currency})")
-    finally:
-        db.close()
