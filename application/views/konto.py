@@ -1,11 +1,13 @@
-from nicegui import ui  # type: ignore
-from application.cqrs.commands.wyslij_przelew import WyslijPrzelew
-from application.cqrs.queries.daj_uzytkownika import DajUzytkownika
-from application.session import get_logged_user_email
-from application.models import User, Account, Transakcja
-from application.account import get_user_accounts
-from application.cqrs.queries.daj_historie_transakcji import daj_historie_transakcji_uzytkownika
 from dataclasses import dataclass
+
+from nicegui import ui  # type: ignore
+
+from application.account import get_user_accounts
+from application.cqrs.commands.wyslij_przelew import WyslijPrzelew
+from application.cqrs.queries.daj_historie_transakcji import daj_historie_transakcji_uzytkownika
+from application.cqrs.queries.daj_uzytkownika import DajUzytkownika
+from application.models import User, Account, Transakcja
+from application.session import get_logged_user_email
 
 
 @ui.page('/konto')
