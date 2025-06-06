@@ -1,8 +1,8 @@
 from application.models import Account, User
 from application.services.database import SessionLocal
+from application.services.database import get_db_session
 from application.session import get_logged_user_email
 from application.utils.catched_total_balance import reset_user_balance
-from application.services.database import get_db_session
 
 
 def get_user_accounts() -> list[Account]:
@@ -31,12 +31,12 @@ def create_account(currency: str, balance: float) -> str:
         user = db.query(User).filter_by(email=email).first()
         if not user:
             return "❌ Użytkownik niezalogowany"
-        
+
         existing = db.query(Account).filter_by(currency=currency.strip().upper(), user_id=user.id).first()
-        
+
         if existing:
             return "⚠️ Konto w tej walucie już istnieje"
-        
+
         add_account_for_user(user, currency, balance)
         return f"✅ Dodano konto: {currency.upper()} ({balance:.2f})"
 
@@ -61,7 +61,6 @@ def delete_account(account_id: int):
         user = db.query(User).filter_by(email=email).first()
 
         if not user:
-            db.close()
             raise Exception("❌ Użytkownik niezalogowany!")
 
         account = db.query(Account).filter_by(id=account_id, user_id=user.id).first()

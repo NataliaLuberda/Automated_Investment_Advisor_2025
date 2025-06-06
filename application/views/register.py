@@ -1,5 +1,7 @@
 from nicegui import ui
+
 from application.auth import create_user
+from application.utils.currency import fetch_currency_codes
 
 
 def input_style():
@@ -12,17 +14,28 @@ def create_register_form():
     email = ui.input("Email").props("type=email").classes(input_style())
     password = ui.input("Hasło").props("type=password").classes(input_style())
     password_confirm = ui.input("Potwierdź hasło").props("type=password").classes(input_style())
+    currencies = fetch_currency_codes()
+    currency_items = [f"{code} - {name}" for code, name in currencies.items()]
+    default_currency = ui.select(
+        currency_items, label="Domyślna waluta konta"
+    ).props("clearable use-input input-debounce=0").classes(input_style())
 
-    return email, password, password_confirm
+    return email, password, password_confirm, default_currency
 
 
-def create_register_button(email, password, password_confirm):
+def create_register_button(email, password, password_confirm, default_currency):
     def handle_register():
         if password.value != password_confirm.value:
             ui.notify("❌ Hasła nie są identyczne", type="negative")
             return
 
-        if create_user(email.value, password.value):
+        if not default_currency.value:
+            ui.notify("❌ Wybierz domyślną walutę!", type="negative")
+            return
+
+        selected_code = default_currency.value.split(" - ")[0]
+
+        if create_user(email.value, password.value, selected_code):
             ui.notify("✅ Rejestracja powiodła się!", type="positive")
             ui.navigate.to("/login")
         else:

@@ -1,6 +1,7 @@
+from dataclasses import dataclass
+
 from application.models import Account, Transakcja
 from application.services.database import get_db_session
-from dataclasses import dataclass
 
 
 class WyslijPrzelew:
