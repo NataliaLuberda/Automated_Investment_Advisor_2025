@@ -1,5 +1,6 @@
-import requests
 import time
+
+import requests
 
 _currency_cache = None
 _currency_cache_time = 0

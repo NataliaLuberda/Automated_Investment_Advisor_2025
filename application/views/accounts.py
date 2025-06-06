@@ -1,4 +1,3 @@
-import requests
 from nicegui import ui
 
 from application.account import create_account

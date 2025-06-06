@@ -1,5 +1,5 @@
 from application.models import User, Account
-from application.services.database import SessionLocal
+from application.services.database import get_db_session
 from application.utils.hashing import hash_password, verify_password
 
 
@@ -8,17 +8,13 @@ def get_user_by_email(db, email: str):
 
 
 def is_user_data_correct(email: str, password: str) -> bool:
-    db = SessionLocal()
-    try:
+    with get_db_session() as db:
         user = get_user_by_email(db, email)
         return user and verify_password(password, user.password_hash)
-    finally:
-        db.close()
 
 
 def create_user(email: str, password: str, default_currency: str) -> bool:
-    db = SessionLocal()
-    try:
+    with get_db_session() as db:
         if get_user_by_email(db, email):
             return False
         user = User(
@@ -34,5 +30,3 @@ def create_user(email: str, password: str, default_currency: str) -> bool:
         db.add(account)
         db.commit()
         return True
-    finally:
-        db.close()
