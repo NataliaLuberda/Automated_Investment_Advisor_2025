@@ -106,16 +106,16 @@ def add_account_dialog():
     return dialog
 
 
-def render_total_balance(total_balance: float):
+def render_total_balance(total_balance: float, default_account):
     with ui.card().classes("p-6 bg-white shadow rounded-lg flex-1"):
         ui.label("💰 Suma wszystkich środków").classes("text-lg font-bold text-gray-700")
-        ui.label(f"{total_balance:.2f} PLN").classes("text-3xl text-green-600")
+        ui.label(f"{total_balance:.2f} {default_account.currency}").classes("text-3xl text-green-600")
 
 
 def render_default_account(default_account):
     with ui.card().classes("p-6 bg-white shadow rounded-lg flex-1"):
-        ui.label("🏦 Konto domyślne (PLN)").classes("text-lg font-bold text-gray-700")
-        ui.label(f"{default_account.balance:.2f} PLN").classes("text-3xl text-blue-600")
+        ui.label(f"🏦 Konto domyślne ({default_account.currency})").classes("text-lg font-bold text-gray-700")
+        ui.label(f"{default_account.balance:.2f} {default_account.currency}").classes("text-3xl text-blue-600")
 
 
 def render_foreign_accounts(foreign_accounts):
@@ -159,8 +159,8 @@ def account_page():
 
     with ui.element("div").classes("w-screen h-screen overflow-hidden bg-gray-100 flex"):
         with ui.column().classes("w-1/2 h-full justify-start items-stretch p-8 gap-6"):
-            render_total_balance(total_balance)
             if default_account:
+                render_total_balance(total_balance, default_account)
                 render_default_account(default_account)
 
         with ui.column().classes("w-1/2 h-full justify-start items-stretch overflow-auto p-8 gap-6"):

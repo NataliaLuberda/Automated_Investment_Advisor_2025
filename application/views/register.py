@@ -58,6 +58,6 @@ def add_login_redirect():
 def register_page():
     with ui.row().classes("h-screen w-screen flex items-center justify-center bg-gray-100"):
         with ui.card().classes("w-96 p-8 shadow-lg rounded-lg bg-white"):
-            email, password, password_confirm = create_register_form()
-            create_register_button(email, password, password_confirm)
+            email, password, password_confirm, default_currency = create_register_form()
+            create_register_button(email, password, password_confirm, default_currency)
             add_login_redirect()
