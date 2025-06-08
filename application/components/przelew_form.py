@@ -10,11 +10,15 @@ class PrzelewForm:
 
         with ui.element().classes("w-full flex justify-center"):
             with ui.element() as self.button_container:
-                self.button_reference = ui.button(
-                    "Nowy przelew",
-                    icon="add",
-                    on_click=lambda: (self.show_form_hide_button()),
-                ).props("color=white text-color=blue")
+                self.button_reference = (
+                    ui.button(
+                        "Nowy przelew",
+                        icon="add",
+                        on_click=lambda: (self.show_form_hide_button()),
+                    )
+                    .props("color=white text-color=blue")
+                    .classes("duration-150 hover:scale-105")
+                )
 
             with ui.element().classes("w-full") as self.form_container:
                 self.form_container.visible = False
@@ -100,4 +104,4 @@ class PrzelewForm:
             self.hide_form_show_button()
 
         except Exception as e:
-            ui.notify(f"Wysyłka nie powiodła się: {e}", type="negative")
+            ui.notify(f"Płatność nie powiodła się: {e}", type="negative")
