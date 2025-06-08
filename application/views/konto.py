@@ -26,70 +26,19 @@ def konto_page():
             uzytkownik: User = get_user_details()
             rachunki_uzytkownika: list[Account] = get_user_accounts()
             user_info = UserInfo(uzytkownik, rachunki_uzytkownika)
-            historia_transakcji = daj_historie_transakcji_uzytkownika(uzytkownik.id)
 
             with ui.card().classes(
-                "w-50 min-h-0 max-h-full flex flex-col items-left justify-left"
+                "w-1/2 min-h-0 max-h-full flex flex-col items-left justify-left p-8 bg-blue-500 text-white rounded-xl shadow-md"
             ):
                 with ui.card_section().classes("w-full"):
-                    ui.label(uzytkownik.email).classes("text-4xl w-full text-center")
+                    ui.label(f"Witaj, {uzytkownik.email}!").classes(
+                        "text-4xl w-full text-center"
+                    )
 
                 with ui.card_section().classes("w-full h-full"):
 
                     PrzelewForm(user_info)
 
-                with ui.card_section():
-                    with ui.tabs() as tabs:
-                        historia = ui.tab("Historia")
-                        rachunki = ui.tab("Moje rachunki")
-                    with ui.tab_panels(tabs, value=historia).classes("w-full"):
-
-                        with ui.tab_panel(historia):
-
-                            with ui.list().props("bordered separator"):
-
-                                ui.item_label("Historia transakcji").props(
-                                    "header"
-                                ).classes("text-bold")
-                                ui.separator()
-
-                                for t in historia_transakcji:
-                                    if t.id_sender == uzytkownik.id:
-                                        color = "red"
-                                        przychodzacy_wychodzacy = "wychodzący"
-                                    else:
-                                        color = "green"
-                                        przychodzacy_wychodzacy = "przychodzący"
-
-                                    with ui.item():
-                                        with ui.row().classes(f"text-{color}-500"):
-                                            ui.item_label(f"Data: {t.timestamp.date()}")
-                                            ui.item_label(
-                                                f"Przelew {przychodzacy_wychodzacy}: {t.amount_numeric}"
-                                            )
-                                            with ui.row().classes(f"text-black"):
-                                                ui.item_label(
-                                                    f"Z rachunku: {t.id_sender}"
-                                                )
-                                                ui.item_label(
-                                                    f"Na rachunek: {t.id_receiver}"
-                                                )
-
-                        with ui.tab_panel(rachunki):
-
-                            with ui.list().props("bordered separator"):
-                                ui.item_label("Moje rachunki").props("header").classes(
-                                    "text-bold"
-                                )
-                                ui.separator()
-
-                                for rachunek in rachunki_uzytkownika:
-                                    with ui.item():
-                                        with ui.column().classes("w-full"):
-                                            ui.item_label(f"Nr. konta: {rachunek.id}")
-                                            ui.item_label(
-                                                f"Saldo: {rachunek.balance} {rachunek.currency}"
-                                            )
         except Exception as e:
             ui.label("Wystąpił błąd. Spróbuj ponownie później.")
             ui.notify(f"Parametry wyjątku: {e}.", type="negative")

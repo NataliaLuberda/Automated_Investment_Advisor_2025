@@ -16,7 +16,7 @@ class PrzelewForm:
                     on_click=lambda: (self.show_form_hide_button()),
                 )
 
-            with ui.element() as self.form_container:
+            with ui.element().classes("w-full") as self.form_container:
                 self.form_container.visible = False
                 self.form_reference = self.przelew_form(user_info)
 
@@ -34,9 +34,9 @@ class PrzelewForm:
 
         transakcja = Transakcja()
 
-        with ui.element() as form:
+        with ui.element().classes("w-full bg-white p-4 rounded-xl") as form:
 
-            with ui.column().classes("w-full border-4"):
+            with ui.column().classes("w-full"):
                 select_options = {
                     acc.id: f"{acc.currency}" for acc in user_info.account_list
                 }
