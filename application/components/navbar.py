@@ -12,7 +12,7 @@ def navbar() -> None:
         )
         ui.button(
             icon="account_balance", on_click=lambda: ui.navigate.to("/account")
-        ).props("flat color=white")
+        ).props("flat color=white").tooltip("Szczegóły kont")
         ui.button(icon="send", on_click=lambda: (ui.navigate.to("/konto"))).props(
             "flat color=white"
         ).tooltip("Wyślij przelew")

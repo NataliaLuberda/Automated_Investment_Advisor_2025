@@ -14,7 +14,7 @@ class PrzelewForm:
                     "Nowy przelew",
                     icon="add",
                     on_click=lambda: (self.show_form_hide_button()),
-                )
+                ).props("color=white text-color=blue")
 
             with ui.element().classes("w-full") as self.form_container:
                 self.form_container.visible = False
