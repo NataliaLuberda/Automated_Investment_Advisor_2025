@@ -1,11 +1,11 @@
 from nicegui import ui
-from application.models import Transakcja
+from application.models import Transaction
 from application.utils.user_info import UserInfo
-from application.cqrs.commands.wyslij_przelew import WyslijPrzelew
+from application.cqrs.commands.transfer_funds import TransferFunds
 from application.utils.user_info import UserInfo
 
 
-class PrzelewForm:
+class PaymentForm:
     def __init__(self, user_info: UserInfo) -> None:
 
         with ui.element().classes("w-full flex justify-center"):
@@ -36,20 +36,20 @@ class PrzelewForm:
 
     def przelew_form(self, user_info: "UserInfo") -> ui.element:
 
-        transakcja = Transakcja()
+        transaction = Transaction()
 
         with ui.element().classes("w-full bg-white p-4 rounded-xl") as form:
 
             with ui.column().classes("w-full"):
                 select_options = {
-                    acc.id: f"{acc.currency}" for acc in user_info.account_list
+                    acc.id: f"{acc.currency} (Nr. Rachunku: {acc.id})"
+                    for acc in user_info.account_list
                 }
-
                 ui.select(
                     options=select_options,
                     label="Z rachunku:",
-                    value=transakcja.id_sender,
-                ).classes("w-full").bind_value(transakcja, "id_sender")
+                    value=transaction.source_account_id,
+                ).classes("w-full").bind_value(transaction, "source_account_id")
 
                 ui.number(
                     label="Kwota przelewu",
@@ -58,21 +58,21 @@ class PrzelewForm:
                     max=999999999.99,
                     step=1.0,
                 ).classes("flex w-full justify-center items-center").bind_value(
-                    transakcja, "amount_numeric"
+                    transaction, "amount_numeric"
                 )
 
                 ui.number(label="Numer rachunku adresata").bind_value(
-                    transakcja, "id_receiver"
+                    transaction, "target_account_id"
                 ).classes("w-full")
 
                 ui.textarea(
                     label="Opis przelewu",
                     validation={
                         "Zbyt długi opis": lambda x: len(x or "")
-                        <= transakcja.MAX_DESC_LENGTH
+                        <= transaction.MAX_DESC_LENGTH
                     },
-                ).classes("w-full").bind_value(transakcja, "description").props(
-                    f"maxlength={transakcja.MAX_DESC_LENGTH}"
+                ).classes("w-full").bind_value(transaction, "description").props(
+                    f"maxlength={transaction.MAX_DESC_LENGTH}"
                 )
 
                 with ui.row().classes("w-full flex justify-between"):
@@ -80,7 +80,7 @@ class PrzelewForm:
                     ui.button(
                         "Wyślij",
                         icon="send",
-                        on_click=lambda: (self.wyslij_przelew_onclick(transakcja)),
+                        on_click=lambda: (self.send_transfer_onclick(transaction)),
                     )
 
                     ui.button(
@@ -91,15 +91,11 @@ class PrzelewForm:
 
         return form
 
-    async def wyslij_przelew_onclick(self, transakcja: Transakcja) -> None:
-        request = WyslijPrzelew.Request(
-            id_nadawcy=transakcja.id_sender,
-            id_adresata=transakcja.id_receiver,
-            kwota=transakcja.amount_numeric,
-            opis=transakcja.description,
-        )
+    async def send_transfer_onclick(self, transaction: Transaction) -> None:
+
+        request = TransferFunds.Request(transaction=transaction)
         try:
-            await WyslijPrzelew.handle(request)
+            await TransferFunds.handle(request)
             ui.notify(f"Wysłano przelew! 🚀", type="positive")
             self.hide_form_show_button()
 

@@ -26,16 +26,16 @@ class User(Base):
     accounts = relationship("Account", back_populates="user")
 
 
-class Transakcja(Base):
+class Transaction(Base):
     __tablename__ = "transactions"
     id = Column(Integer, primary_key=True, autoincrement=True)
     amount_numeric = Column(Float(8), nullable=False)
-    id_sender = Column(Integer, ForeignKey("accounts.id"), nullable=False)
-    id_receiver = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    target_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    source_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
     timestamp = Column(DateTime, default=datetime.now())
     description = Column(String(128), nullable=False)
-    sender = relationship("Account", foreign_keys=[id_sender])
-    receiver = relationship("Account", foreign_keys=[id_receiver])
+    source = relationship("Account", foreign_keys=[target_account_id])
+    target = relationship("Account", foreign_keys=[source_account_id])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
