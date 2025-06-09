@@ -8,7 +8,7 @@ _CURRENCY_CODES_CACHE_TTL = 60 * 60 * 24 * 7  # 1 tydzień
 _rates_cache = {}  # klucz: (base_currency, tuple(symbols)), wartość: (czas, rates)
 _RATES_CACHE_TTL = 60 * 60 * 24  # np. 1 dzień
 
-API_KEY = "cur_live_WllS2ns9qh9K1PIRxkpLkFoYgYc6shSXDvZBnO51"
+API_KEY = "cur_live_csgDqbGeXXyr0uc91hQhQCP5drzSk39c17kcepIN"
 
 
 def convert_between_currencies(amount: float, from_currency: str, to_currency: str) -> float:
