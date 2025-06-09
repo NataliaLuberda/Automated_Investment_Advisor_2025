@@ -10,6 +10,9 @@ def navbar() -> None:
         ui.button(icon="savings", on_click=lambda: ui.navigate.to("/savings")).props(
             "flat color=white"
         )
+        ui.button(icon="bar_chart", on_click=lambda: ui.navigate.to("/transaction")).props(
+            "flat color=white"
+        ).tooltip("Historia transakcji")
         ui.button(
             icon="account_balance", on_click=lambda: ui.navigate.to("/account")
         ).props("flat color=white").tooltip("Szczegóły kont")
