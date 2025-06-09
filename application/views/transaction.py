@@ -1,32 +1,37 @@
 from nicegui import ui
 from sqlalchemy.orm import Session
-from application.models import User, Transaction
+from application.models import User, Account
 from application.auth import get_user_by_email
 from application.session import get_logged_user_email
 from application.account import get_user_accounts
 from application.cqrs.queries.get_transaction_history import (
     get_accounts_transaction_history,
 )
+from application.components.navbar import navbar
 
 
 @ui.page("/transaction")
 def transaction_page():
-    ui.label("🏠 Transaction_page").classes("text-h4")
-    ui.button("Wyloguj", on_click=lambda: ui.navigate.to("/login"))
+
+    navbar()
 
     user_email = get_logged_user_email()
     user: User = get_user_by_email(user_email)
+
+    ui.label(f"🏠 Twoje transakcje, {user_email}").classes("text-h4")
+    ui.button("Wyloguj", on_click=lambda: ui.navigate.to("/login"))
+
     user_accounts = get_user_accounts()
 
     ui.label(f"Witaj, {user.email}!").classes("text-2xl font-bold mt-4")
     default_currency = (
         user.default_currency if user and user.default_currency else "PLN"
     )
-    default_account = next(
+    default_account: Account = next(
         (acc for acc in user_accounts if acc.currency == default_currency), None
     )
 
-    main_balance = default_account.balance
+    main_balance: Account = default_account.balance
 
     savings = 1500
 
