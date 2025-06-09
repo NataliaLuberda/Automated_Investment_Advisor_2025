@@ -2,8 +2,9 @@ import os
 from contextlib import contextmanager
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, MetaData, text
 from sqlalchemy.orm import sessionmaker, declarative_base
+
 
 load_dotenv()
 
@@ -17,6 +18,17 @@ DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NA
 Base = declarative_base()
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+""""
+with engine.connect() as conn:
+        conn.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+
+        metadata = MetaData()
+        metadata.reflect(bind=engine)
+        metadata.drop_all(bind=engine)
+
+        conn.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+"""
 
 
 def init_db():

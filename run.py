@@ -6,6 +6,7 @@ from application.views.register import register_page
 from application.views.home import home_page
 from application.views.payments import payment_page
 from application.services.database import init_db
+from application.views.transaction import transaction_page
 
 
 def start_app():
