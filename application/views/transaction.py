@@ -19,8 +19,15 @@ def transaction_page():
     user_accounts = get_user_accounts()
 
     ui.label(f"Witaj, {user.email}!").classes("text-2xl font-bold mt-4")
+    default_currency = (
+        user.default_currency if user and user.default_currency else "PLN"
+    )
+    default_account = next(
+        (acc for acc in user_accounts if acc.currency == default_currency), None
+    )
 
-    main_balance = 2000
+    main_balance = default_account.balance
+
     savings = 1500
 
     with ui.row().classes("w-full max-w-4xl justify-between"):
@@ -38,7 +45,11 @@ def transaction_page():
 
     ui.label("Historia transakcji").classes("text-lg font-semibold mt-6")
 
-    transactions = get_accounts_transaction_history(1)
+    transactions = (
+        get_accounts_transaction_history(user_accounts[0].id)
+        if user_accounts is not None or len(user_accounts) > 0
+        else []
+    )
     account_ids = [acc.id for acc in user_accounts]
 
     with ui.list().props("bordered separator"):
