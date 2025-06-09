@@ -19,17 +19,6 @@ Base = declarative_base()
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-""""
-with engine.connect() as conn:
-        conn.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
-
-        metadata = MetaData()
-        metadata.reflect(bind=engine)
-        metadata.drop_all(bind=engine)
-
-        conn.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
-"""
-
 
 def init_db():
     Base.metadata.create_all(bind=engine)
