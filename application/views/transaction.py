@@ -1,13 +1,15 @@
-from nicegui import ui
-from datetime import datetime, timedelta, date
-from application.models import User
-from application.auth import get_user_by_email
-from application.session import get_logged_user_email
-from application.account import get_user_accounts
-from application.cqrs.queries.get_transaction_history import get_accounts_transaction_history
-from application.components.navbar import navbar
 import csv
 import io
+from datetime import datetime, timedelta, date
+
+from nicegui import ui
+
+from application.account import get_user_accounts
+from application.auth import get_user_by_email
+from application.components.navbar import navbar
+from application.cqrs.queries.get_transaction_history import get_accounts_transaction_history
+from application.models import User
+from application.session import get_logged_user_email
 
 
 @ui.page("/transaction")

@@ -1,12 +1,13 @@
 from nicegui import ui
+
 from application.account import get_user_accounts
+from application.components.navbar import navbar
+from application.components.payment_form import PaymentForm
 from application.cqrs.queries.get_transaction_history import get_accounts_transaction_history
 from application.cqrs.queries.get_user import GetUser
 from application.models import User, Account
 from application.session import get_logged_user_email
-from application.components.navbar import navbar
 from application.utils.user_info import UserInfo
-from application.components.payment_form import PaymentForm
 
 
 @ui.page("/payments")
