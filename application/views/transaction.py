@@ -1,180 +1,193 @@
 from nicegui import ui
-from sqlalchemy.orm import Session
-from application.models import User, Account
+from datetime import datetime, timedelta, date
+from application.models import User
 from application.auth import get_user_by_email
 from application.session import get_logged_user_email
 from application.account import get_user_accounts
-from application.cqrs.queries.get_transaction_history import (
-    get_accounts_transaction_history,
-)
+from application.cqrs.queries.get_transaction_history import get_accounts_transaction_history
 from application.components.navbar import navbar
-from datetime import datetime, timedelta
+import csv
+import io
 
 
 @ui.page("/transaction")
 def transaction_page():
-
     navbar()
 
     user_email = get_logged_user_email()
     user: User = get_user_by_email(user_email)
-
-    ui.label(f"🏠 Przegląd Twojego budżetu, {user_email}").classes("text-h4")
-    ui.button("Wyloguj", on_click=lambda: ui.navigate.to("/login"))
-
     user_accounts = get_user_accounts()
+    account_ids = [acc.id for acc in user_accounts] if user_accounts else []
 
-    ui.label(f"Witaj, {user.email}!").classes("text-2xl font-bold mt-4")
-    default_currency = (
-        user.default_currency if user and user.default_currency else "PLN"
-    )
-    default_account: Account = next(
-        (acc for acc in user_accounts if acc.currency == default_currency), None
-    )
+    default_currency = user.default_currency if user and user.default_currency else "PLN"
+    default_account = next((acc for acc in user_accounts if acc.currency == default_currency), None)
+    main_balance = default_account.balance if default_account else 0
+    transactions = get_accounts_transaction_history(user_accounts[0].id) if user_accounts else []
+    savings = sum(t.amount_numeric for t in transactions if t.target_account_id in account_ids) - \
+              sum(t.amount_numeric for t in transactions if t.source_account_id in account_ids)
 
-    main_balance: Account = default_account.balance
+    summary_chart_ref = {'chart': None}
+    income_label_ref = {'label': None}
+    expense_label_ref = {'label': None}
+    balance_label_ref = {'label': None}
 
-    savings = 1500
+    def update_summary_chart():
+        nonlocal transactions
 
-    with ui.row().classes("w-full max-w-4xl justify-center gap-8"):
-        with ui.card().classes("w-full max-w-sm bg-blue-50"):
-            ui.label("Saldo główne").classes("text-lg text-gray-600")
-            ui.label(f"{main_balance:.2f} {user.default_currency or 'PLN'}").classes(
-                "text-3xl font-bold text-green-600"
-            )
+        income = sum(t.amount_numeric for t in transactions if t.target_account_id in account_ids)
+        expense = sum(t.amount_numeric for t in transactions if t.source_account_id in account_ids)
+        balance = float(income) - float(expense)
 
-        with ui.card().classes("w-full max-w-sm bg-yellow-50"):
-            ui.label("Oszczędności").classes("text-lg text-gray-600")
-            ui.label(f"{savings:.2f} {user.default_currency or 'PLN'}").classes(
-                "text-3xl font-bold text-orange-500"
-            )
-
-    ui.label("Historia transakcji").classes("text-xl font-semibold mt-6")
-
-    transactions = (
-        get_accounts_transaction_history(user_accounts[0].id)
-        if user_accounts and len(user_accounts) > 0
-        else []
-    )
-    account_ids = [acc.id for acc in user_accounts]
-
-    #Date filter
-    today = datetime.today().date()
-    thirty_days_ago = today - timedelta(days=30)
-
-    with ui.row().classes("w-full justify-center mt-4"):
-        with ui.row().classes("gap-4 items-center"):
-            with ui.column():
-                ui.label("Od")
-                date_from = ui.date(value=thirty_days_ago)
-            with ui.column():
-                ui.label("Do")
-                date_to = ui.date(value=today)
-            filter_button = ui.button("Filtruj")
-
-
-    transaction_container = ui.column().classes("items-center w-full mt-4")
-
-    def render_transactions(filtered_tx):
-        transaction_container.clear()
-        with transaction_container:
-            with ui.list().props("bordered separator").classes("w-full max-w-3xl"):
-                ui.item_label("Transakcje").props("header").classes("text-bold")
-                ui.separator()
-                for trans in filtered_tx:
-                    is_income = trans.target_account_id in account_ids
-                    amount = trans.amount_numeric if is_income else -trans.amount_numeric
-                    kolor = "text-green-600" if amount >= 0 else "text-red-600"
-
-                    with ui.item():
-                        with ui.item_section().props("avatar"):
-                            ui.icon("attach_money")
-                        with ui.item_section():
-                            ui.item_label(trans.description)
-                            ui.item_label(trans.timestamp.strftime("%Y-%m-%d %H:%M")).props(
-                                "caption"
-                            )
-                        with ui.item_section().props("side"):
-                            ui.item_label(f"{amount:.2f}").classes(f"font-semibold {kolor}")
-                        with ui.item_section().props("side"):
-                            ui.item_label(user.default_currency or "PLN").classes(
-                                "text-gray-500 text-sm"
-                            )
-
-    def filter_transactions():
-        start_raw = date_from.value
-        end_raw = date_to.value
-
-        if not start_raw or not end_raw:
-            return transactions
-
-        # Konwersja do typu datetime.date (jeśli nie jest)
-        if isinstance(start_raw, str):
-            start = datetime.strptime(start_raw, "%Y-%m-%d").date()
-        else:
-            start = start_raw
-
-        if isinstance(end_raw, str):
-            end = datetime.strptime(end_raw, "%Y-%m-%d").date()
-        else:
-            end = end_raw
-
-        return [
-            t for t in transactions
-            if start <= t.timestamp.date() <= end
-        ]
-
-
-
-
-    #Summary chart for specified date
-    summary_chart = ui.echart(
-        {
+        chart_options = {
             "tooltip": {"trigger": "axis"},
-            "xAxis": {
-                "type": "category",
-                "data": ["Dochody", "Wydatki"],
-                "axisLabel": {"color": "gray"},
-            },
-            "yAxis": {"type": "value", "axisLabel": {"color": "gray"}},
-            "series": [
-                {
-                    "type": "bar",
-                    "data": [],
-                    "label": {"show": True, "position": "top", "color": "black"},
-                }
-            ],
+            "xAxis": {"type": "category", "data": ["Wpływy", "Wydatki"],
+                      "axisLabel": {"color": "#666", "fontSize": 12}},
+            "yAxis": {"type": "value", "axisLabel": {"color": "#666", "fontSize": 12},
+                      "splitLine": {"lineStyle": {"color": "#eee"}}},
+            "series": [{
+                "type": "bar",
+                "data": [
+                    {"value": float(income), "itemStyle": {"color": "#4CAF50"}},
+                    {"value": float(expense), "itemStyle": {"color": "#F44336"}},
+                ],
+                "label": {
+                    "show": False  # 👈 wyłącza etykiety nad słupkami
+                },
+                "barWidth": "40%",
+            }],
+            "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
         }
-    )
 
-    def update_summary_chart(filtered_tx):
-        income = sum(
-            t.amount_numeric for t in filtered_tx if t.target_account_id in account_ids
-        )
-        expense = sum(
-            t.amount_numeric for t in filtered_tx if t.source_account_id in account_ids
-        )
-        summary_chart.options["series"][0]["data"] = [
-            {"value": income, "itemStyle": {"color": "#4caf50"}},
-            {"value": expense, "itemStyle": {"color": "#f44336"}},
-        ]
-        summary_chart.update()
+        chart = summary_chart_ref['chart']
+        if chart:
+            chart.options.clear()
+            chart.options.update(chart_options)
+            chart.update()
 
-    
-    def on_filter_click():
-        filtered = filter_transactions()
-        render_transactions(filtered)
-        update_summary_chart(filtered)
+        income_label = income_label_ref['label']
+        expense_label = expense_label_ref['label']
+        balance_label = balance_label_ref['label']
+        if income_label and expense_label and balance_label:
+            income_label.text = f"+{income:.2f}"
+            expense_label.text = f"-{expense:.2f}"
+            balance_label.text = f"{balance:+.2f}"
+            balance_label.classes(replace=f"text-sm font-bold {'text-green-600' if balance >= 0 else 'text-red-600'}")
 
-    filter_button.on("click", on_filter_click)
-    
+    with ui.column().classes("w-full max-w-6xl mx-auto px-4"):
+        with ui.row().classes("w-full items-center justify-between"):
+            ui.label("Historia transakcji").classes("text-2xl font-bold text-blue-800")
+            with ui.row().classes("gap-3"):
+                with ui.card().classes("p-2 px-3 bg-blue-50 rounded-lg"):
+                    ui.label(f"{main_balance:.2f} {default_currency}").classes("text-sm font-bold text-blue-800")
+                    ui.label("Saldo").classes("text-xs text-blue-600")
+                with ui.card().classes("p-2 px-3 bg-green-50 rounded-lg"):
+                    ui.label(f"{savings:.2f} {default_currency}").classes("text-sm font-bold text-green-800")
+                    ui.label("Oszczędności").classes("text-xs text-green-600")
 
+        with ui.row().classes("w-full gap-4 mt-4 items-start no-wrap"):
 
+            with ui.column().classes("bg-gray-50 p-3 rounded-lg border min-w-[280px] sticky top-4"):
+                today = datetime.today().date()
+                thirty_days_ago = today - timedelta(days=30)
 
-    filtered_initial = filter_transactions()
-    render_transactions(filtered_initial)
-    update_summary_chart(filtered_initial)
+                ui.label("Filtruj transakcje").classes("font-medium text-gray-700 mb-2")
+                date_from = ui.date(value=thirty_days_ago).props("dense bordered").classes("w-full")
+                date_to = ui.date(value=today).props("dense bordered").classes("w-full")
 
-    with ui.row().classes("w-full justify-center"):
-        ui.button("🔄 Odśwież wykres", on_click=lambda: update_summary_chart(filter_transactions())).classes("mt-4")
+                def to_date(value):
+                    if isinstance(value, str):
+                        return datetime.strptime(value, "%Y-%m-%d").date()
+                    elif isinstance(value, datetime):
+                        return value.date()
+                    elif isinstance(value, date):
+                        return value
+                    raise ValueError("Nieobsługiwany format daty")
 
+                def apply_filters():
+                    nonlocal transactions
+
+                    start_date = to_date(date_from.value)
+                    end_date = to_date(date_to.value)
+
+                    filtered = get_accounts_transaction_history(user_accounts[0].id) if user_accounts else []
+                    filtered = [t for t in filtered if start_date <= t.timestamp.date() <= end_date]
+
+                    transactions = filtered
+                    transaction_container.clear()
+                    render_transactions()
+                    update_summary_chart()
+
+                def export_to_csv():
+                    output = io.StringIO()
+                    writer = csv.writer(output)
+                    writer.writerow(['Data', 'Opis', 'Kwota', 'Typ'])
+                    for t in transactions:
+                        writer.writerow([
+                            t.timestamp.strftime("%Y-%m-%d %H:%M"),
+                            t.description,
+                            f"{t.amount_numeric:.2f}",
+                            "Wpływ" if t.target_account_id in account_ids else "Wydatek"
+                        ])
+                    ui.download(output.getvalue().encode(), filename='transakcje.csv')
+
+                date_from.on("update:model-value", lambda e: apply_filters())
+                date_to.on("update:model-value", lambda e: apply_filters())
+
+                ui.button("Eksportuj do CSV", icon="download", on_click=export_to_csv) \
+                    .classes("w-full mt-2 bg-green-500 text-white py-1 h-8")
+
+            with ui.column().classes("flex-1 bg-white p-0 rounded-lg border overflow-hidden"):
+                transaction_container = ui.column().classes("w-full")
+
+                def render_transactions():
+                    with transaction_container:
+                        with ui.row().classes("bg-gray-100 p-2 border-b items-center justify-between"):
+                            ui.label("Ostatnie transakcje").classes("font-medium text-gray-700")
+                            ui.label(f"Liczba: {len(transactions)}").classes("text-sm text-gray-500")
+
+                        with ui.scroll_area().classes("w-full h-[calc(100vh-300px)]"):
+                            with ui.list().props("bordered dense").classes("w-full"):
+                                for trans in transactions[:100]:
+                                    is_income = trans.target_account_id in account_ids
+                                    amount = trans.amount_numeric if is_income else -trans.amount_numeric
+                                    row_class = "bg-blue-50/50" if is_income else ""
+
+                                    with ui.item().classes(f"px-3 py-2 {row_class}"):
+                                        with ui.item_section():
+                                            ui.icon("arrow_upward" if is_income else "arrow_downward") \
+                                                .classes("text-green-600" if is_income else "text-red-600")
+                                        with ui.item_section().classes("min-w-0"):
+                                            ui.label(trans.description).classes("text-sm font-medium truncate")
+                                            ui.label(trans.timestamp.strftime("%Y-%m-%d %H:%M")) \
+                                                .classes("text-xs text-gray-500")
+                                        with ui.item_section().props("side").classes("text-right"):
+                                            ui.label(f"{amount:+.2f} {default_currency}") \
+                                                .classes("text-sm font-medium " + (
+                                                "text-green-600" if is_income else "text-red-600"))
+
+                render_transactions()
+
+        with ui.column().classes("w-full mt-4 bg-white p-4 rounded-lg border"):
+            with ui.row().classes("items-center justify-between w-full mb-3"):
+                ui.label("Podsumowanie finansowe").classes("text-lg font-semibold text-gray-700")
+
+            summary_chart_ref['chart'] = ui.echart(options={
+                "xAxis": {"type": "category", "data": []},
+                "yAxis": {"type": "value"},
+                "series": []
+            }).classes("w-full h-64")
+
+            with ui.row().classes("w-full justify-around mt-4"):
+                with ui.column().classes("items-center"):
+                    ui.label("Wpływy").classes("text-sm text-gray-600")
+                    income_label_ref['label'] = ui.label("+0.00").classes("text-lg font-bold text-green-600")
+
+                with ui.column().classes("items-center"):
+                    ui.label("Wydatki").classes("text-sm text-gray-600")
+                    expense_label_ref['label'] = ui.label("-0.00").classes("text-lg font-bold text-red-600")
+
+                with ui.column().classes("items-center"):
+                    ui.label("Bilans").classes("text-sm text-gray-600")
+                    balance_label_ref['label'] = ui.label("+0.00").classes("text-lg font-bold text-green-600")
+
+    ui.timer(0.1, update_summary_chart)

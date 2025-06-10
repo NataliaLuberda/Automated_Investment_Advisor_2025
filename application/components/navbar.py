@@ -5,9 +5,10 @@ from application.session import logout_user
 def navbar() -> None:
 
     with ui.row().classes(
-        "w-full justify-between items-center px-10 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg rounded-lg"
-    ) as navbar:
-        ui.button(icon="savings", on_click=lambda: ui.navigate.to("/savings")).props(
+        "w-full justify-between items-center px-10 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white "
+        "shadow-lg rounded-lg "
+    ):
+        ui.button(icon="home", on_click=lambda: ui.navigate.to("/home")).props(
             "flat color=white"
         )
         ui.button(icon="bar_chart", on_click=lambda: ui.navigate.to("/transaction")).props(
