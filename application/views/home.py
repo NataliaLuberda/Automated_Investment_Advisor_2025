@@ -3,12 +3,14 @@ from random import choice
 from nicegui import ui
 
 from application.account import get_user_accounts
+from application.account import update_default_account_currency
 from application.auth import get_user_by_email
-from application.session import logout_user, get_logged_user_email
+from application.components.navbar import navbar
+from application.cqrs.queries.get_transaction_history import get_accounts_transaction_history
+from application.session import get_logged_user_email
 from application.utils.catched_total_balance import get_cached_total_balance_for_user
 from application.utils.currency import fetch_currency_codes
 from application.utils.tips import financial_tips
-from application.components.navbar import navbar
 
 
 @ui.page("/home")
@@ -21,12 +23,18 @@ def home_page():
         user.default_currency if user and user.default_currency else "PLN"
     )
     total_balance = get_cached_total_balance_for_user(user_name, accounts)
-    savings = 0
+    transactions = []
+    for acc in accounts:
+        transactions += get_accounts_transaction_history(acc.id)
+
+    income = sum(t.amount_numeric for t in transactions if t.target_account_id in accounts)
+    expense = sum(t.amount_numeric for t in transactions if t.source_account_id in accounts)
+    savings = max(0, income - expense)
 
     currency_wallet = {}
     for acc in accounts:
         currency_wallet[acc.currency] = (
-            currency_wallet.get(acc.currency, 0) + acc.balance
+                currency_wallet.get(acc.currency, 0) + acc.balance
         )
 
     with ui.column().classes("items-center w-full"):
@@ -36,7 +44,7 @@ def home_page():
         ui.separator().classes("my-4")
 
         with ui.card().classes(
-            "w-full max-w-4xl p-6 bg-green-50 rounded-lg shadow flex items-center gap-4 mb-6"
+                "w-full max-w-4xl p-6 bg-green-50 rounded-lg shadow flex items-center gap-4 mb-6"
         ) as tip_card:
             ui.label("💡").classes("text-4xl")
             tip_label = ui.label("").classes("text-md font-medium text-green-900")
@@ -52,7 +60,7 @@ def home_page():
         label_value = "text-4xl font-bold"
 
         with ui.row().classes(
-            "w-full max-w-6xl gap-12 justify-center items-start flex-wrap"
+                "w-full max-w-6xl gap-12 justify-center items-start flex-wrap"
         ):
 
             with ui.card().classes(card_classes):
@@ -102,8 +110,6 @@ def home_page():
                     default_account_select = ui.select(
                         options, label="Konto domyślne", value=default_label
                     ).classes("w-60 bg-skyblue text-blue-600 font-bold")
-
-                from application.account import update_default_account_currency
 
                 def set_default():
                     selected_label = default_account_select.value

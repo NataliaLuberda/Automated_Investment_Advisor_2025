@@ -2,8 +2,9 @@ import os
 from contextlib import contextmanager
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, MetaData, text
 from sqlalchemy.orm import sessionmaker, declarative_base
+
 
 load_dotenv()
 
