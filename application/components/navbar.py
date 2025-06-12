@@ -10,10 +10,10 @@ def navbar() -> None:
     ):
         ui.button(icon="home", on_click=lambda: ui.navigate.to("/home")).props(
             "flat color=white"
-        )
-        ui.button(icon="bar_chart", on_click=lambda: ui.navigate.to("/transaction")).props(
-            "flat color=white"
-        ).tooltip("Historia transakcji")
+        ).tooltip("Home")
+        ui.button(
+            icon="bar_chart", on_click=lambda: ui.navigate.to("/transaction")
+        ).props("flat color=white").tooltip("Historia transakcji")
         ui.button(
             icon="account_balance", on_click=lambda: ui.navigate.to("/account")
         ).props("flat color=white").tooltip("Szczegóły kont")
@@ -23,4 +23,4 @@ def navbar() -> None:
         ui.button(
             icon="logout",
             on_click=lambda: (logout_user(), ui.navigate.to("/login")),
-        ).props("flat color=white")
+        ).props("flat color=white").tooltip("Wyloguj")
