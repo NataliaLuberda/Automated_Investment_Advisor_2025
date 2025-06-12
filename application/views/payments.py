@@ -83,20 +83,37 @@ def payment_page():
                                         ):
                                             for t in transactions:
                                                 direction = (
-                                                    "⬆️ Wysłano"
+                                                    "Wysłano"
                                                     if t.source_account_id == account.id
-                                                    else "⬇️ Otrzymano"
+                                                    else "Otrzymano"
                                                 )
                                                 amount = f"{t.amount_numeric:.2f} {account.currency}"
                                                 counterparty_id = (
                                                     t.target_account_id
-                                                    if direction == "⬆️ Wysłano"
+                                                    if direction == "Wysłano"
                                                     else t.source_account_id
                                                 )
+                                                date = t.timestamp or "Nieznana"
                                                 description = t.description or ""
-                                                ui.label(
-                                                    f"{direction}: {amount} do/od: {counterparty_id} | Opis: {description}"
-                                                ).classes("text-sm my-1")
+
+                                                color = (
+                                                    "red"
+                                                    if direction is "Wysłano"
+                                                    else "green"
+                                                )
+
+                                                with ui.column().classes(
+                                                    "border-2 border-gray-500 rounded-lg w-full p-4"
+                                                ):
+                                                    ui.label(f"Data: {date}")
+                                                    ui.label(
+                                                        f"{direction}: {amount} do/od: {counterparty_id}"
+                                                    ).classes(
+                                                        f"text-sm text-bold text-{color}"
+                                                    )
+                                                    ui.label(
+                                                        f"Opis: {description}"
+                                                    ).classes("text-bold")
 
                 search_query.on("update:model-value", lambda _: show_accounts())
                 show_accounts()
