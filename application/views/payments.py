@@ -33,7 +33,7 @@ def payment_page():
                 PaymentForm(user_info)
 
                 search_query = (
-                    ui.input(label="Wyszukaj konto po walucie lub ID")
+                    ui.input(label="Wyszukaj konto po walucie")
                     .classes("my-4 w-full text-white placeholder-white")
                     .props("color=white")
                 )
