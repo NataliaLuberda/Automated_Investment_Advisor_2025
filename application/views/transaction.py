@@ -1,6 +1,7 @@
 import csv
 import io
 from datetime import datetime, timedelta, date
+from typing import Dict, List, Optional
 
 from nicegui import ui
 
@@ -8,9 +9,55 @@ from application.account import get_user_accounts
 from application.auth import get_user_by_email
 from application.components.navbar import navbar
 from application.cqrs.queries.get_transaction_history import get_accounts_transaction_history
-from application.models import User
+from application.models import User, Transaction
 from application.session import get_logged_user_email
 
+def to_date(value) -> date:
+    if isinstance(value, str):
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    elif isinstance(value, datetime):
+        return value.date()
+    elif isinstance(value, date):
+        return value
+    raise ValueError("Nieobsługiwany format daty")
+
+def calculate_transaction_summary(transactions: List[Transaction], account_ids: List[int]) -> Dict[str, float]:
+    income = sum(t.amount_numeric for t in transactions if t.target_account_id in account_ids)
+    expense = sum(t.amount_numeric for t in transactions if t.source_account_id in account_ids)
+    balance = float(income) - float(expense)
+    return {"income": income, "expense": expense, "balance": balance}
+
+def get_chart_options(income: float, expense: float) -> Dict:
+    return {
+        "tooltip": {"trigger": "axis"},
+        "xAxis": {"type": "category", "data": ["Wpływy", "Wydatki"],
+                  "axisLabel": {"color": "#666", "fontSize": 12}},
+        "yAxis": {"type": "value", "axisLabel": {"color": "#666", "fontSize": 12},
+                  "splitLine": {"lineStyle": {"color": "#eee"}}},
+        "series": [{
+            "type": "bar",
+            "data": [
+                {"value": float(income), "itemStyle": {"color": "#4CAF50"}},
+                {"value": float(expense), "itemStyle": {"color": "#F44336"}},
+            ],
+            "label": {"show": False},
+            "barWidth": "40%",
+        }],
+        "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
+    }
+
+def export_transactions_to_csv(transactions: List[Transaction], account_ids: List[int], default_currency: str) -> bytes:
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Data', 'Opis', 'Kwota', 'Typ'])
+    for t in transactions:
+        writer.writerow([
+            t.timestamp.strftime("%Y-%m-%d %H:%M"),
+            t.description,
+            f"{t.amount_numeric:.2f}",
+            "Wpływ" if t.target_account_id in account_ids else "Wydatek"
+        ])
+    return output.getvalue().encode()
 
 @ui.page("/transaction")
 def transaction_page():
@@ -35,45 +82,22 @@ def transaction_page():
 
     def update_summary_chart():
         nonlocal transactions
-
-        income = sum(t.amount_numeric for t in transactions if t.target_account_id in account_ids)
-        expense = sum(t.amount_numeric for t in transactions if t.source_account_id in account_ids)
-        balance = float(income) - float(expense)
-
-        chart_options = {
-            "tooltip": {"trigger": "axis"},
-            "xAxis": {"type": "category", "data": ["Wpływy", "Wydatki"],
-                      "axisLabel": {"color": "#666", "fontSize": 12}},
-            "yAxis": {"type": "value", "axisLabel": {"color": "#666", "fontSize": 12},
-                      "splitLine": {"lineStyle": {"color": "#eee"}}},
-            "series": [{
-                "type": "bar",
-                "data": [
-                    {"value": float(income), "itemStyle": {"color": "#4CAF50"}},
-                    {"value": float(expense), "itemStyle": {"color": "#F44336"}},
-                ],
-                "label": {
-                    "show": False  # 👈 wyłącza etykiety nad słupkami
-                },
-                "barWidth": "40%",
-            }],
-            "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
-        }
-
+        summary = calculate_transaction_summary(transactions, account_ids)
+        
         chart = summary_chart_ref['chart']
         if chart:
             chart.options.clear()
-            chart.options.update(chart_options)
+            chart.options.update(get_chart_options(summary['income'], summary['expense']))
             chart.update()
 
         income_label = income_label_ref['label']
         expense_label = expense_label_ref['label']
         balance_label = balance_label_ref['label']
         if income_label and expense_label and balance_label:
-            income_label.text = f"+{income:.2f}"
-            expense_label.text = f"-{expense:.2f}"
-            balance_label.text = f"{balance:+.2f}"
-            balance_label.classes(replace=f"text-sm font-bold {'text-green-600' if balance >= 0 else 'text-red-600'}")
+            income_label.text = f"+{summary['income']:.2f}"
+            expense_label.text = f"-{summary['expense']:.2f}"
+            balance_label.text = f"{summary['balance']:+.2f}"
+            balance_label.classes(replace=f"text-sm font-bold {'text-green-600' if summary['balance'] >= 0 else 'text-red-600'}")
 
     with ui.column().classes("w-full max-w-6xl mx-auto px-4"):
         with ui.row().classes("w-full items-center justify-between"):
@@ -87,7 +111,6 @@ def transaction_page():
                     ui.label("Oszczędności").classes("text-xs text-green-600")
 
         with ui.row().classes("w-full gap-4 mt-4 items-start no-wrap"):
-
             with ui.column().classes("bg-gray-50 p-3 rounded-lg border min-w-[280px] sticky top-4"):
                 today = datetime.today().date()
                 thirty_days_ago = today - timedelta(days=30)
@@ -96,18 +119,8 @@ def transaction_page():
                 date_from = ui.date(value=thirty_days_ago).props("dense bordered").classes("w-full")
                 date_to = ui.date(value=today).props("dense bordered").classes("w-full")
 
-                def to_date(value):
-                    if isinstance(value, str):
-                        return datetime.strptime(value, "%Y-%m-%d").date()
-                    elif isinstance(value, datetime):
-                        return value.date()
-                    elif isinstance(value, date):
-                        return value
-                    raise ValueError("Nieobsługiwany format daty")
-
                 def apply_filters():
                     nonlocal transactions
-
                     start_date = to_date(date_from.value)
                     end_date = to_date(date_to.value)
 
@@ -120,17 +133,10 @@ def transaction_page():
                     update_summary_chart()
 
                 def export_to_csv():
-                    output = io.StringIO()
-                    writer = csv.writer(output)
-                    writer.writerow(['Data', 'Opis', 'Kwota', 'Typ'])
-                    for t in transactions:
-                        writer.writerow([
-                            t.timestamp.strftime("%Y-%m-%d %H:%M"),
-                            t.description,
-                            f"{t.amount_numeric:.2f}",
-                            "Wpływ" if t.target_account_id in account_ids else "Wydatek"
-                        ])
-                    ui.download(output.getvalue().encode(), filename='transakcje.csv')
+                    ui.download(
+                        export_transactions_to_csv(transactions, account_ids, default_currency),
+                        filename='transakcje.csv'
+                    )
 
                 date_from.on("update:model-value", lambda e: apply_filters())
                 date_to.on("update:model-value", lambda e: apply_filters())

@@ -25,8 +25,13 @@ def set_account_balance(user, currency: str, new_balance: float):
 
 
 def create_account(currency: str, balance: float) -> str:
+    if balance < 0:
+        return "❌ Saldo nie może być ujemne"
+        
+    if not currency or len(currency.strip()) != 3:
+        return "❌ Nieprawidłowy format waluty (wymagane 3 litery)"
+        
     with get_db_session() as db:
-        db = SessionLocal()
         email = get_logged_user_email()
         user = db.query(User).filter_by(email=email).first()
         if not user:
@@ -42,6 +47,12 @@ def create_account(currency: str, balance: float) -> str:
 
 
 def add_account_for_user(user, currency: str, start_balance: float = 0.0):
+    if start_balance < 0:
+        raise ValueError("Saldo nie może być ujemne")
+        
+    if not currency or len(currency.strip()) != 3:
+        raise ValueError("Nieprawidłowy format waluty (wymagane 3 litery)")
+        
     with get_db_session() as db:
         currency = currency.strip().upper()
         existing = db.query(Account).filter_by(currency=currency, user_id=user.id).first()
