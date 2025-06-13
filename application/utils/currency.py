@@ -1,74 +1,67 @@
-import time
-
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Dict, Optional
 import requests
+from datetime import datetime, timedelta
+from .error_handler import ApplicationError
+from .config import config
 
-_currency_cache = None
-_currency_cache_time = 0
-_CURRENCY_CODES_CACHE_TTL = 60 * 60 * 24 * 7  # 1 tydzień
-_rates_cache = {}  # klucz: (base_currency, tuple(symbols)), wartość: (czas, rates)
-_RATES_CACHE_TTL = 60 * 60 * 24  # np. 1 dzień
+class CurrencyConverter:
+    _instance = None
+    _rates: Dict[str, Decimal] = {}
+    _last_update: Optional[datetime] = None
+    _cache_duration = timedelta(hours=1)
 
-API_KEY = "cur_live_csgDqbGeXXyr0uc91hQhQCP5drzSk39c17kcepIN"
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(CurrencyConverter, cls).__new__(cls)
+        return cls._instance
 
-
-def convert_between_currencies(amount: float, from_currency: str, to_currency: str) -> float:
-    if from_currency == to_currency:
-        return round(amount, 2)
-
-    rates = get_currencyapi_rates(base_currency=from_currency, symbols=[to_currency])
-    converted = amount * rates[to_currency]
-    return round(converted, 2)
-
-
-def get_currencyapi_rates(base_currency: str = "PLN", symbols: list[str] = None) -> dict:
-    global _rates_cache
-    if symbols is None:
-        symbols = ["USD", "EUR", "GBP", "CAD"]
-
-    symbols_tuple = tuple(symbols)
-    cache_key = (base_currency, symbols_tuple)
-    now = time.time()
-
-    if cache_key in _rates_cache:
-        cached_time, rates = _rates_cache[cache_key]
-        if now - cached_time < _RATES_CACHE_TTL:
-            return rates
-
-    symbols_param = ",".join(symbols)
-    url = f"https://api.currencyapi.com/v3/latest?apikey={API_KEY}&base_currency={base_currency}&currencies={symbols_param}"
-
-    response = requests.get(url)
-    data = response.json()
-
-    if "data" not in data:
-        raise ValueError(f"Nie udało się pobrać kursów: {data}")
-
-    rates = {}
-    for symbol in symbols:
+    def _fetch_exchange_rates(self):
         try:
-            rates[symbol] = data["data"][symbol]["value"]
-        except KeyError:
-            raise ValueError(f"❌ Brak kursu {symbol} względem {base_currency}")
+            response = requests.get('https://api.exchangerate-api.com/v4/latest/PLN')
+            if response.status_code != 200:
+                raise ApplicationError("Nie udało się pobrać kursów walut")
+            
+            data = response.json()
+            self._rates = {
+                currency: Decimal(str(rate))
+                for currency, rate in data['rates'].items()
+                if currency in config.supported_currencies
+            }
+            self._last_update = datetime.now()
+        except requests.RequestException as e:
+            raise ApplicationError(f"Błąd podczas pobierania kursów walut: {str(e)}")
 
-    _rates_cache[cache_key] = (now, rates)
-    return rates
+    def _ensure_rates_updated(self):
+        if (self._last_update is None or 
+            datetime.now() - self._last_update > self._cache_duration):
+            self._fetch_exchange_rates()
 
+    def convert(self, amount: Decimal, from_currency: str, to_currency: str) -> Decimal:
+        if from_currency == to_currency:
+            return amount
 
-def fetch_currency_codes():
-    global _currency_cache, _currency_cache_time
-    now = time.time()
+        self._ensure_rates_updated()
 
-    if _currency_cache and (now - _currency_cache_time) < _CURRENCY_CODES_CACHE_TTL:
-        return _currency_cache
+        if from_currency not in self._rates or to_currency not in self._rates:
+            raise ApplicationError(f"Nieobsługiwana waluta: {from_currency} lub {to_currency}")
 
-    url = "https://openexchangerates.org/api/currencies.json"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            _currency_cache = response.json()
-            _currency_cache_time = now
-            return _currency_cache
+        if from_currency == 'PLN':
+            return (amount / self._rates[to_currency]).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+        elif to_currency == 'PLN':
+            return (amount * self._rates[from_currency]).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
         else:
-            return _currency_cache or {}
-    except Exception:
-        return _currency_cache or {}
+            pln_amount = amount * self._rates[from_currency]
+            return (pln_amount / self._rates[to_currency]).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+
+    def format_amount(self, amount: Decimal, currency: str) -> str:
+        symbol = config.currency_symbols.get(currency, currency)
+        return f"{amount:,.2f} {symbol}"
+
+converter = CurrencyConverter()

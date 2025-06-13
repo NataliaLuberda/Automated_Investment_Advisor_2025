@@ -35,11 +35,9 @@ class Transaction(Base):
     timestamp = Column(DateTime, default=datetime.now())
     description = Column(String(128), nullable=False)
     
-    # Fixed relationships
     source = relationship("Account", foreign_keys=[source_account_id])
     target = relationship("Account", foreign_keys=[target_account_id])
     
-    # Add constraint for positive amount
     __table_args__ = (
         CheckConstraint('amount_numeric > 0', name='check_amount_positive'),
     )
